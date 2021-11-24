@@ -201,3 +201,25 @@ def generate_api(data_json):
         api_file.close()
         print(key + ".py created...")
     print("!All API files created!")
+
+    "#######################################################################"
+
+
+def generate():
+    apiFile = './api-src/openapi.json'
+    with open(apiFile, encoding='utf-8') as data_file:
+        rawData = json.load(data_file)
+    pathData = rawData.get('paths')
+    schemaData = rawData.get('components').get('schemas')
+
+    print("Generating Sources:\n")
+    compiled_enum_data = compile_enum_data(schemaData)
+    compiled_api_data = compile_api_data(pathData)
+
+    generate_enums(compiled_enum_data)
+    print()
+    generate_api(compiled_api_data)
+
+
+if __name__ == '__main__':
+    generate()
