@@ -1,0 +1,11 @@
+import enum
+
+
+class {{class_name}}(enum.Enum):
+{{#values}}
+    // {{description}}
+    {{identifier}} = {{numericValue}}
+
+{{/values}}
+// value not found fallback
+ProtectedInvalidEnumValue = 999999999

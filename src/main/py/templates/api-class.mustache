@@ -1,0 +1,44 @@
+import requests
+{{#imports}}
+    import generated_src.main.py.lib.enums.{{.}}
+{{/imports}}
+
+{{#methods}}
+
+    /**
+    / {{method_desc}}
+    {{#param_info}}
+        / @param {{^isArray}}{{param_name}}:{{param_type}} {{param_desc}}{{/isArray}}{{#isArray}}{{param_name}}:{{param_type}}[{{array_type}}] {{param_desc}}{{/isArray}}
+    {{/param_info}}
+    /
+    / <a href="https://bungie-net.github.io/#{{endpoint_tag}}.{{method_name}}">{{endpoint_tag}}.{{method_name}}</a>
+    */
+
+    public static JsonObject {{method_name}}({{#param_info}}{{#required}}{{assert_type}}{{param_name}}, {{/required}}{{/param_info}}HttpUtils util){
+    String path_unformatted = "{{path}}";
+    HashMap map = new HashMap();
+    {{#param_info}}
+        {{#required}}
+            map.add("{{param_name}}", {{param_name}});
+        {{/required}}
+    {{/param_info}}
+    String path = MapFormat.format(path_unformatted, map);
+    JsonObject responseJson = utils.{{endpoint_type}}BungieEndpoint(path);
+    System.out.println(responseJson);
+    }
+
+    {{#has_query}}public static JsonObject {{method_name}}({{#param_info}}{{assert_type}}{{param_name}}, {{/param_info}}HttpUtils util){
+    String path_unformatted = "{{path}}";
+    HashMap map = new HashMap();
+    {{#param_info}}
+        {{#required}}
+            map.add("{{param_name}}", {{param_name}});
+        {{/required}}
+    {{/param_info}}
+    String path = MapFormat.format(path_unformatted, map);
+    String path_params = "?";
+    path_params += {{#param_info}}{{^required}}"{{param_name}}="+{{param_name}}{{^last}}+"&"+{{/last}}{{/required}}{{/param_info}};
+    JsonObject responseJson = utils.{{endpoint_type}}BungieEndpoint(path);
+    System.out.println(responseJson);
+    }{{/has_query}}
+{{/methods}}
