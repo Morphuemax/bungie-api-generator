@@ -1,5 +1,5 @@
 import com.google.gson.Gson;
-import com.google.gson.JsonElement
+import com.google.gson.JsonElement;
 {{#imports}}
 import generated_src.main.java.lib.enums.{{.}};
 {{/imports}}
@@ -7,7 +7,7 @@ import generated_src.main.java.lib.enums.{{.}};
 public class {{model_name}}{
 
   {{#params}}
-  {{param_type}} {{param_name}}
+  {{param_type}} {{param_name}};
   {{/params}}
 
   public {{model_name}}(JsonElement jsonElement){
@@ -24,5 +24,7 @@ public class {{model_name}}{
   public void set{{Param_Name}}({{param_type}} {{param_name}}){
     this.{{param_name}} = {{param_name}};
   }
+  {{/isRequest}}
+  {{/params}}
 
 }
