@@ -1,4 +1,18 @@
 import com.google.gson.Gson;
+import com.google.gson.JsonElement
 {{#imports}}
 import generated_src.main.java.lib.enums.{{.}};
 {{/imports}}
+
+public class {{model_name}}{
+
+  {{#params}}
+  {{param_type}} {{param_name}}
+  {{/params}}
+
+  public {{model_name}}(JsonElement jsonElement){
+    Gson gson = new Gson();
+    this = gson.fromJson(jsonElement, this.class);
+  }
+
+}
