@@ -1,6 +1,11 @@
-import requests
+import com.google.gson.JsonObject;
 {{#imports}}
-    import generated_src.main.py.lib.enums.{{.}}
+{{#enums}}
+import generated_src.main.java.lib.enums.{{.}};
+{{/enums}}
+{{#models}}
+import generated_src.main.java.lib.models.{{.}};
+{{/models}}
 {{/imports}}
 
 {{#methods}}
