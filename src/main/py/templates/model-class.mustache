@@ -14,5 +14,15 @@ public class {{model_name}}{
     Gson gson = new Gson();
     this = gson.fromJson(jsonElement, this.class);
   }
+  
+  {{#params}}
+  public {{param_type}} get{{Param_Name}}(){
+    return {{param_name}};
+  }
+  
+  {{#isRequest}}
+  public void set{{Param_Name}}({{param_type}} {{param_name}}){
+    this.{{param_name}} = {{param_name}};
+  }
 
 }
