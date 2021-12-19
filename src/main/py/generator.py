@@ -5,6 +5,17 @@ import shutil
 import chevron
 
 
+type_conversion_dict = {
+    "boolean": "bool",
+    "byte": "byte",
+    "int32": "int",
+    "uint32": "long",
+    "int64": "long",
+    "date-time": "String",
+    "": "String"
+}
+
+
 def compile_enum_data(data):
     all_enums = {}  # Create empty dict which we will fill and return
     for key in data:
@@ -16,7 +27,6 @@ def compile_enum_data(data):
             values = []
             for value in data[key].get('x-enum-values'):  # This will give us the value, identifier and description
                 numerical_value = value.get('numericValue')
-                # Since Python uses "None" we need to change this identifier
                 identifier = value.get('identifier')
                 # Not every enum has a description
                 description = value.get('description') if value.get('description') is not None else ""
@@ -76,19 +86,29 @@ def compile_api_parameters(parameter_data):
     for key in parameter_data:
         param_name = key['name']
         param_desc = key['description']
-        param_type = key['schema']['type']  # The data type of the parameter: str, int, lst, ...
-        in_type = key['in']  # Is is a path parameter or query parameter
-        isArray = True if param_type == "array" else False  # Some query params allow multiple values
+        type = key['schema']['type']  # The data type of the parameter: str, int, lst, ...
+        isArray = True if type == "array" else False  # Some query params allow multiple values
+        if not isArray:
+            param_type = key.get("schema").get('format')
+            param_type = param_type if param_type is not None else ""
+            enum_reference = key['schema'].get('x-enum-reference')  # Get the enum reference, if any
+            # Since not every param has an associated enum, we must split this into two lines
+            enum_reference = enum_reference['$ref'] if enum_reference is not None else ""
+            # Reference is formatted as: /{path}/{Tag}.{Name}
+            enum_reference = enum_reference.split("/")[-1].split(".")[-1]  # Get ref name
+        else:
+            param_type = key.get("schema").get('items')
+            param_type = param_type['format'] if param_type is not None else ""
+            enum_reference = key['schema']['items'].get('x-enum-reference')  # Get the enum reference, if any
+            # Since not every param has an associated enum, we must split this into two lines
+            enum_reference = enum_reference['$ref'] if enum_reference is not None else ""
+            # Reference is formatted as: /{path}/{Tag}.{Name}
+            enum_reference = enum_reference.split("/")[-1].split(".")[-1]  # Get ref name
+        in_type = key['in']  # Is "in" a path parameter or query parameter
         isQuery = True if in_type == "query" else False  # Used for template formatting
-        enum_reference = key['schema'].get('x-enum-reference')  # Get the enum reference, if any
-        # Since not every param has an associated enum, we must split this into two lines
-        enum_reference = enum_reference['$ref'] if enum_reference is not None else ""
-        # Reference is formatted as: /{path}/{Tag}.{Name}
-        enum_reference = enum_reference.split("/")[-1].split(".")[-1]  # Get ref name
-        array_type = key['schema']['items']['type'] if param_type == "array" else ""  # Data type within array
+        array_type = key['schema']['items']['type'] if type == "array" else ""  # Data type within array
         # We want to make sure that the inputs are the correct type
-        array_assert_type = ""
-        assert_type = ""
+        param_type = type_conversion_dict.get(param_type) if enum_reference == "" else enum_reference
 
         required = True if key.get('required') is True else False  # Not every param is required for endpoint
 
@@ -99,9 +119,7 @@ def compile_api_parameters(parameter_data):
                            'array_type': array_type,
                            'isArray': isArray,
                            'isQuery': isQuery,
-                           'required': required,
-                           'assert_type': assert_type,
-                           'array_assert_type': array_assert_type
+                           'required': required
                            })
         imports.append(enum_reference)
         if isQuery:
@@ -129,12 +147,13 @@ def compile_api_data(data):
         path_data = data[path]
         method_name = path_data['summary'].split('.')[1]  # Summary/Endpoint is formatted {Tag}.{Name}
         method_desc = path_data['description']
-        # The key for further inspection is dependant on whether endpoint is get or post
+        # The key for further inspection is dependent on whether endpoint is get or post
         # If 'get' key doesn't exist, we know it must be 'post'
         if not (path_data.get('get') is None):
             endpoint_type = 'get'
         else:
             endpoint_type = 'post'
+        isPost = True if endpoint_type == 'post' else False
         endpoint_tag = path_data[endpoint_type]['tags'][0]
         # Gets endpoint params & enum imports
         param_data_unsorted, import_data, has_query = compile_api_parameters(
@@ -153,19 +172,41 @@ def compile_api_data(data):
 
             param_info.append(param_info_json)
 
+        return_type = path_data[endpoint_type]['responses']['200']['$ref']
+        return_type = return_type.split("/")[-1].split(".")[-1]  # Get ref name
+        if type_conversion_dict.get(return_type) is not None:
+            return_type = type_conversion_dict.get(return_type)
+
+        request_type = path_data[endpoint_type].get('requestBody')
+        request_type = request_type['content']['application/json']['schema'] if request_type is not None else ""
+
+        if request_type != "":
+            if request_type.get('$ref') is not None:
+                request_type = request_type['$ref']
+                request_type = request_type.split("/")[-1].split(".")[-1]
+            else:
+                request_type = request_type['items']['format']
+                request_type = type_conversion_dict.get(request_type)
+
         method_info = {"method_name": method_name,
                        "endpoint_tag": endpoint_tag,
                        'endpoint_type': endpoint_type,
+                       'isPost': isPost,
                        'path': path,
                        'method_desc': method_desc,
                        'param_info': param_info,
+                       'request_type': request_type,
+                       'return_type': return_type,
                        'has_query': has_query
                        }
 
         if endpoint_tag not in all_methods:
             entry = {
                 endpoint_tag: {
-                    'imports': [],
+                    'imports': {
+                        'enums': [],
+                        'models': []
+                    },
                     'methods': []
                 }
             }
@@ -173,8 +214,15 @@ def compile_api_data(data):
         all_methods[endpoint_tag]['methods'].append(method_info)
         # TODO: See if reference/model imports are needed
         for import_ref in import_data:
-            if import_ref not in all_methods[endpoint_tag]['imports']:
-                all_methods[endpoint_tag]['imports'].append(import_ref)
+            if import_ref not in all_methods[endpoint_tag]['imports']['enums']:
+                all_methods[endpoint_tag]['imports']['enums'].append(import_ref)
+        if request_type != "":
+            if request_type not in all_methods[endpoint_tag]['imports']['models']:
+                if request_type not in type_conversion_dict.values():
+                    all_methods[endpoint_tag]['imports']['models'].append(request_type)
+        if return_type not in all_methods[endpoint_tag]['imports']['models']:
+            if return_type not in type_conversion_dict.values():
+                all_methods[endpoint_tag]['imports']['models'].append(return_type)
     return all_methods
 
 
@@ -214,7 +262,7 @@ def generate_api(data_json):
 
 def generate():
     # apiFile = './api-src/openapi.json'
-    apiFile = 'C:/Users/pengu_000/Documents/Destiny 2/bungie-api-java/api-src/openapi.json'
+    apiFile = '../../../api-src/openapi.json'
     with open(apiFile, 'r', encoding='utf-8') as data_file:
         rawData = json.load(data_file)
     pathData = rawData.get('paths')
