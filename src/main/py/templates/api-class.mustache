@@ -13,43 +13,47 @@ import generated_src.main.java.lib.models.{{.}};
     /**
     / {{method_desc}}
     {{#param_info}}
-        / @param {{param_name}}:{{param_type}}{{#isArray}}[{{array_type}}]{{/isArray}} {{param_desc}}
+    / @param {{param_name}}:{{param_type}}{{#isArray}}[]{{/isArray}} {{param_desc}}
     {{/param_info}}
     /
     / <a href="https://bungie-net.github.io/#{{endpoint_tag}}.{{method_name}}">{{endpoint_tag}}.{{method_name}}</a>
     */
 
-    public static {{returnType}} {{method_name}}({{#param_info}}{{#required}}{{assert_type}}{{#isArray}}[]{{/isArray}}{{param_name}},
-    {{/required}}
-    {{#isPost}}{{requestBodyType}} requestBody, {{/isPost}}{{/param_info}}
-    HttpUtils util){
-    String path_unformatted = "{{path}}";
-    HashMap map = new HashMap();
-    {{#param_info}}{{#required}}
-     map.add("{{param_name}}", {{param_name}});
-    {{/required}}{{/param_info}}
-    String path = MapFormat.format(path_unformatted, map);
-    JsonObject responseJson = utils.{{endpoint_type}}BungieEndpoint(path);
-    System.out.println(responseJson);
-    return new {{returnType}}(responseJson);
+    public static {{return_type}} {{method_name}}(
+        {{#param_info}}
+        {{#required}}{{param_type}}{{#isArray}}[]{{/isArray}} {{param_name}}, {{/required}}
+        {{/param_info}}
+        {{#isPost}}{{request_type}} requestBody, {{/isPost}}HttpUtils util)
+    {
+        String path_unformatted = "{{path}}";
+        HashMap map = new HashMap();
+        {{#param_info}}{{#required}}
+        map.add("{{param_name}}", {{param_name}});
+        {{/required}}{{/param_info}}
+        String path = MapFormat.format(path_unformatted, map);
+        JsonObject responseJson = utils.{{endpoint_type}}BungieEndpoint(path);
+        System.out.println(responseJson);
+        return new {{returnType}}(responseJson);
     }
     
     {{#has_query}}
-    public static {{returnType}} {{method_name}}({{#param_info}}{{assert_type}}{{#isArray}}[]{{/isArray}}{{param_name}},
-    {{#isPost}}{{requestBodyType}} requestBody, {{/isPost}}{{/param_info}}
-    HttpUtils util){
-    String path_unformatted = "{{path}}";
-    HashMap map = new HashMap();
-    {{#param_info}}{{#required}}
-    map.add("{{param_name}}", {{param_name}});
-    {{/required}}{{/param_info}}
-    String path = MapFormat.format(path_unformatted, map);
-    String path_params = "?";
-    path_params += {{#param_info}}{{^required}}"{{param_name}}="+{{param_name}}{{^last}}+"&"+{{/last}}{{/required}}{{/param_info}};
-    path += path_params;
-    JsonObject responseJson = utils.{{endpoint_type}}BungieEndpoint(path);
-    System.out.println(responseJson);
-    return new {{returnType}}(responseJson);
+    public static {{return_type}} {{method_name}}(
+        {{#param_info}}{{param_type}}{{#isArray}}[]{{/isArray}} {{param_name}},
+        {{/param_info}}{{#isPost}}{{request_type}} requestBody, {{/isPost}}
+        HttpUtils util
+    ){
+        String path_unformatted = "{{path}}";
+        HashMap map = new HashMap();
+        {{#param_info}}{{#required}}
+        map.add("{{param_name}}", {{param_name}});
+        {{/required}}{{/param_info}}
+        String path = MapFormat.format(path_unformatted, map);
+        String path_params = "?";
+        path_params += {{#param_info}}{{^required}}"{{param_name}}="+{{param_name}}{{^last}}+"&"+{{/last}}{{/required}}{{/param_info}};
+        path += path_params;
+        JsonObject responseJson = utils.{{endpoint_type}}BungieEndpoint(path);
+        System.out.println(responseJson);
+        return new {{returnType}}(responseJson);
     }
     {{/has_query}}
 {{/methods}}
