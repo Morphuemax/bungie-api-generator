@@ -15,6 +15,7 @@ type_conversion_dict = {
     "double": "Double",
     "string": "String",
     "date-time": "String",
+    "object": "Object",
     "": "String"
 }
 
@@ -324,6 +325,7 @@ def compile_api_data(data):
                         'enums': [],
                         'models': []
                     },
+                    "tag": endpoint_tag,
                     'methods': []
                 }
             }
