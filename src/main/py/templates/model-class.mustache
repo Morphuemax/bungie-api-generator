@@ -12,7 +12,7 @@ import generated_src.main.java.lib.models.{{.}};
 public class {{class_name}}{
 
   {{#properties}}
-  {{property_type}} {{property_name}};
+  {{property_type}}{{#isArray}}[]{{/isArray}} {{property_name}};
   {{/properties}}
 
   public {{class_name}}(JsonElement jsonElement){
@@ -21,15 +21,13 @@ public class {{class_name}}{
   }
   
   {{#properties}}
-  public {{property_type}} get{{Property_Name}}(){
+  public {{property_type}}{{#isArray}}[]{{/isArray}} get{{Property_Name}}(){
     return {{property_name}};
   }
-  
   {{#isRequest}}
-  public void set{{Property_Name}}({{property_type}} {{property_name}}){
+  public void set{{Property_Name}}({{property_type}}{{#isArray}}[]{{/isArray}} {{property_name}}){
     this.{{property_name}} = {{property_name}};
   }
   {{/isRequest}}
   {{/properties}}
-
 }

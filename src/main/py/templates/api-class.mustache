@@ -33,7 +33,11 @@ import generated_src.main.java.lib.models.{{.}};
         String path = MapFormat.format(path_unformatted, map);
         JsonObject responseJson = utils.{{endpoint_type}}BungieEndpoint(path);
         System.out.println(responseJson);
-        return new {{returnType}}(responseJson);
+        if(!responseJson.get("ErrorCode").equals(200){
+            System.out.println("Error: "+responseJson.get("DetailedErrorTrace"));
+            return null;
+        }
+        return new {{return_type}}(responseJson);
     }
     
     {{#has_query}}
@@ -53,7 +57,11 @@ import generated_src.main.java.lib.models.{{.}};
         path += path_params;
         JsonObject responseJson = utils.{{endpoint_type}}BungieEndpoint(path);
         System.out.println(responseJson);
-        return new {{returnType}}(responseJson);
+        if(!responseJson.get("ErrorCode").equals(200){
+            System.out.println("Error: "+responseJson.get("DetailedErrorTrace"));
+            return null;
+        }
+        return new {{return_type}}(responseJson);
     }
     {{/has_query}}
 {{/methods}}

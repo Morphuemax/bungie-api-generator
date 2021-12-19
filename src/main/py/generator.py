@@ -6,13 +6,13 @@ import chevron
 
 
 type_conversion_dict = {
-    "boolean": "bool",
-    "byte": "byte",
-    "int16": "short",
-    "int32": "int",
-    "uint32": "long",
-    "int64": "long",
-    "double": "double",
+    "boolean": "Boolean",
+    "byte": "Byte",
+    "int16": "Short",
+    "int32": "Integer",
+    "uint32": "Long",
+    "int64": "Long",
+    "double": "Double",
     "string": "String",
     "date-time": "String",
     "": "String"
@@ -146,7 +146,8 @@ def compile_model_data(data):
                     all_properties.append({
                         'property_type': property_type,
                         'property_name': property_name,
-                        'Property_Name': property_name.capitalize(),
+                        'Property_Name': property_name[0].upper()+property_name[1:],
+                        'isArray': isArray,
                         'isRequest': True if "Request" in class_name else False
                     })
                 entry = {
