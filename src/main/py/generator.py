@@ -8,9 +8,12 @@ import chevron
 type_conversion_dict = {
     "boolean": "bool",
     "byte": "byte",
+    "int16": "short",
     "int32": "int",
     "uint32": "long",
     "int64": "long",
+    "double": "double",
+    "string": "String",
     "date-time": "String",
     "": "String"
 }
@@ -75,6 +78,119 @@ def generate_enums(data_json):
         api_file.close()
         print(key + ".java created...")
     print("!All Enum files created!")
+
+    "##################################################################"
+
+
+def compile_model_data(data):
+    all_models = {}
+    for key in data:
+        enum_imports = []
+        model_imports = []
+        isResponse = False
+        if data[key].get('type') == "object":  # Confirm that JSON has 'enum' key
+            isResponse = True
+        if isResponse:
+            class_name = key.split("/")[-1].split(".")[-1]  # Get ref name
+            print(key)
+            all_properties = []
+            model_properties = data[key].get('properties')
+            if model_properties is not None:
+                for key2 in model_properties:
+                    model_property = model_properties[key2]
+                    property_name = key2
+                    print("\t"+property_name)
+                    isArray = True if model_property.get('type') == "array" else False
+                    if isArray:
+                        items = model_property['items']
+                        if items.get('$ref') is not None:
+                            property_type = items.get('$ref').split("/")[-1].split(".")[-1]  # Get ref name
+                        else:
+                            if items.get('x-enum-reference') is not None:
+                                property_type = items.get('x-enum-reference')['$ref']
+                                property_type = property_type.split("/")[-1].split(".")[-1]  # Get ref name
+                            else:
+                                if items.get('format') is not None:
+                                    property_type = items.get('format')
+                                else:
+                                    property_type = model_property.get('type')
+                        if property_type in type_conversion_dict:
+                            property_type = type_conversion_dict[property_type]
+                        if items.get('$ref') is not None:
+                            model_imports.append(property_type)
+                        else:
+                            if items.get('x-enum-reference') is not None:
+                                enum_imports.append(property_type)
+                    # If property is not an array
+                    else:
+                        if model_property.get('$ref') is not None:
+                            property_type = model_property.get('$ref')
+                            property_type = property_type.split("/")[-1].split(".")[-1]  # Get ref name
+                        else:
+                            if model_property.get('x-enum-reference') is not None:
+                                property_type = model_property.get('x-enum-reference')['$ref']
+                                property_type = property_type.split("/")[-1].split(".")[-1]  # Get ref name
+                            else:
+                                if model_property.get('format') is not None:
+                                    property_type = model_property.get('format')
+                                else:
+                                    property_type = model_property.get('type')
+                        # Check if property is a primative
+                        if property_type in type_conversion_dict.keys():
+                            property_type = type_conversion_dict[property_type]
+                        if model_property.get('$ref') is not None:
+                            model_imports.append(property_type)
+                        else:
+                            if model_property.get('x-enum-reference') is not None:
+                                enum_imports.append(property_type)
+                    all_properties.append({
+                        'property_type': property_type,
+                        'property_name': property_name,
+                        'Property_Name': property_name.capitalize(),
+                        'isRequest': True if "Request" in class_name else False
+                    })
+                entry = {
+                    class_name: {
+                        'imports': {
+                            'enums': enum_imports,
+                            'models': model_imports
+                        },
+                        'properties': all_properties,
+                        'class_name': class_name
+                    }
+                }
+                all_models.update(entry)
+    return all_models
+
+
+def generate_models(data_json):
+    path = '../../../generated-src/main/java/lib/models/'
+
+    files = glob.glob(path + '*', recursive=True)
+    isExist = os.path.exists(path)
+
+    # We want to clear the enums folder so we can generate a new one
+    if isExist:
+        try:
+            shutil.rmtree(path)
+        except OSError as e:
+            print("Error: %s : %s" % (path, e.strerror))
+    # Create empty directory
+    os.makedirs(path)
+    print("Cleared Models directory")
+    print("Generating Models")
+    # For each enum we are making a separate file
+    for key in data_json:
+        template_path = "./templates/model-class.mustache"
+        isFile = os.path.isfile(template_path)
+        with open(template_path, 'r') as f:
+            # Render enum.mustache with enum data we collected
+            rendered = chevron.render(f, data_json[key])
+        api_file = open(path + key + ".java", 'x')
+        api_file.write(rendered)
+        api_file.close()
+        print(key + ".java created...")
+    print("!All Model files created!")
 
     "##################################################################"
 
@@ -270,9 +386,12 @@ def generate():
 
     print("Generating Sources:\n")
     compiled_enum_data = compile_enum_data(schemaData)
+    compiled_model_data = compile_model_data(schemaData)
     compiled_api_data = compile_api_data(pathData)
 
     generate_enums(compiled_enum_data)
+    print()
+    generate_models(compiled_model_data)
     print()
     generate_api(compiled_api_data)
 
