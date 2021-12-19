@@ -1,4 +1,10 @@
+package lib.api;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import java.util.HashMap;
+import org.apache.logging.log4j.message.MapMessage;
 {{#imports}}
 {{#enums}}
 import generated_src.main.java.lib.enums.{{.}};
@@ -8,6 +14,7 @@ import generated_src.main.java.lib.models.{{.}};
 {{/models}}
 {{/imports}}
 
+public class {{tag}}{
 {{#methods}}
 
     /**
@@ -19,7 +26,7 @@ import generated_src.main.java.lib.models.{{.}};
     / <a href="https://bungie-net.github.io/#{{endpoint_tag}}.{{method_name}}">{{endpoint_tag}}.{{method_name}}</a>
     */
 
-    public static {{return_type}} {{method_name}}(
+    public static ResponseObject<{{return_type}}> {{method_name}}(
         {{#param_info}}
         {{#required}}{{param_type}}{{#isArray}}[]{{/isArray}} {{param_name}}, {{/required}}
         {{/param_info}}
@@ -33,15 +40,15 @@ import generated_src.main.java.lib.models.{{.}};
         String path = MapFormat.format(path_unformatted, map);
         JsonObject responseJson = utils.{{endpoint_type}}BungieEndpoint(path);
         System.out.println(responseJson);
-        if(!responseJson.get("ErrorCode").equals(200){
+        ResponseObject<{{return_type}}> response = new ResponseObject(responseJson);
+        if(!responseJson.get("ErrorCode").equals(200)){
             System.out.println("Error: "+responseJson.get("DetailedErrorTrace"));
-            return null;
         }
-        return new {{return_type}}(responseJson);
+        return response;
     }
     
     {{#has_query}}
-    public static {{return_type}} {{method_name}}(
+    public static ResponseObject<{{return_type}}> {{method_name}}(
         {{#param_info}}{{param_type}}{{#isArray}}[]{{/isArray}} {{param_name}},
         {{/param_info}}{{#isPost}}{{request_type}} requestBody, {{/isPost}}
         HttpUtils util
@@ -57,11 +64,12 @@ import generated_src.main.java.lib.models.{{.}};
         path += path_params;
         JsonObject responseJson = utils.{{endpoint_type}}BungieEndpoint(path);
         System.out.println(responseJson);
-        if(!responseJson.get("ErrorCode").equals(200){
+        ResponseObject<{{return_type}}> response = new ResponseObject(responseJson);
+        if(!responseJson.get("ErrorCode").equals(200)){
             System.out.println("Error: "+responseJson.get("DetailedErrorTrace"));
-            return null;
         }
-        return new {{return_type}}(responseJson);
+        return response;
     }
     {{/has_query}}
 {{/methods}}
+}
