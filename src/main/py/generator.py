@@ -123,19 +123,19 @@ def compile_model_data(data):
                     print("\t"+property_name)
                     isArray = True if model_property.get('type') == "array" else False
                     property_type = json_extract(model_property, 'x-enum-value')
-                    if property_type is not None:
-                        print(property_type)
-                        property_type = property_type['$ref']
+                    if property_type:
+                        property_type = property_type[0]['$ref']
                         property_type = property_type.split("/")[-1].split(".")[-1]  # Get ref name
                         enum_imports.append(property_type)
                     else:
                         property_type = json_extract(model_property, '$ref')
-                        if property_type is None:
+                        if not property_type:
                             property_type = json_extract(model_property, 'format')
-                            if property_type is None:
+                            if not property_type:
                                 property_type = json_extract(model_property, 'type')
+                            property_type = property_type[0]
                         else:
-                            property_type = property_type.split("/")[-1].split(".")[-1]  # Get ref name
+                            property_type = property_type[0].split("/")[-1].split(".")[-1]  # Get ref name
                             model_imports.append(property_type)
                     if property_type in type_conversion_dict:
                         property_type = type_conversion_dict[property_type]
@@ -239,7 +239,7 @@ def compile_api_parameters(parameter_data):
     param_json = []  # List allows us to dynamically add parameters
     imports = []  # If any parameters require enums, we will add them here for importing later
     has_query = False
-    for k, v in parameter_data:
+    for key in parameter_data:
         param_name = key['name']
         param_desc = key['description']
         type = key['schema']['type']  # The data type of the parameter: str, int, lst, ...
