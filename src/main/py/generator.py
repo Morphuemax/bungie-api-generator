@@ -19,17 +19,30 @@ type_conversion_dict = {
     "": "String"
 }
 
+def recursive_search(json_input, lookup_key):
+    if isinstance(json_input, dict):
+        for k, v in json_input.iteritems():
+            if k == lookup_key:
+                yield v
+            else:
+                for child_val in item_generator(v, lookup_key):
+                    yield child_val
+    elif isinstance(json_input, list):
+        for item in json_input:
+            for item_val in item_generator(item, lookup_key):
+                yield item_val
+
 
 def compile_enum_data(data):
     all_enums = {}  # Create empty dict which we will fill and return
-    for key in data:
+    for k, v in data:
         isEnum = False  # Assume it's not an enum until known
-        if data[key].get('enum') is not None:  # Confirm that JSON has 'enum' key
+        if v.get('enum') is not None:  # Confirm that JSON has 'enum' key
             isEnum = True
         if isEnum:
-            class_name = key.split('.')[-1]  # Keys are formated {Tag}.{Name}
+            class_name = k.split('.')[-1]  # Keys are formated {Tag}.{Name}
             values = []
-            for value in data[key].get('x-enum-values'):  # This will give us the value, identifier and description
+            for value in v.get('x-enum-values'):  # This will give us the value, identifier and description
                 numerical_value = value.get('numericValue')
                 identifier = value.get('identifier')
                 # Not every enum has a description
@@ -85,65 +98,82 @@ def generate_enums(data_json):
 
 def compile_model_data(data):
     all_models = {}
-    for key in data:
+    for k,v in data:
         enum_imports = []
         model_imports = []
         isResponse = False
-        if data[key].get('type') == "object":  # Confirm that JSON has 'enum' key
+        if v.get('type') == "object":  # Confirm that JSON has 'enum' key
             isResponse = True
         if isResponse:
-            class_name = key.split("/")[-1].split(".")[-1]  # Get ref name
+            class_name = k.split("/")[-1].split(".")[-1]  # Get ref name
             print(key)
             all_properties = []
             model_properties = data[key].get('properties')
             if model_properties is not None:
-                for key2 in model_properties:
-                    model_property = model_properties[key2]
-                    property_name = key2
+                for k2, v2 in model_properties:
+                    model_property = v2
+                    property_name = k2
                     print("\t"+property_name)
                     isArray = True if model_property.get('type') == "array" else False
-                    if isArray:
-                        items = model_property['items']
-                        if items.get('$ref') is not None:
-                            property_type = items.get('$ref').split("/")[-1].split(".")[-1]  # Get ref name
-                        else:
-                            if items.get('x-enum-reference') is not None:
-                                property_type = items.get('x-enum-reference')['$ref']
-                                property_type = property_type.split("/")[-1].split(".")[-1]  # Get ref name
-                            else:
-                                if items.get('format') is not None:
-                                    property_type = items.get('format')
-                                else:
-                                    property_type = model_property.get('type')
-                        if property_type in type_conversion_dict:
-                            property_type = type_conversion_dict[property_type]
-                        if items.get('$ref') is not None:
-                            model_imports.append(property_type)
-                        else:
-                            if items.get('x-enum-reference') is not None:
-                                enum_imports.append(property_type)
-                    # If property is not an array
+                    property_type = recursive_search(model_property, 'x-enum-value')
+                    if property_type is not None:
+                        property_type = property_type['$ref']
+                        property_type = property_type.split("/")[-1].split(".")[-1]  # Get ref name
+                        enum_imports.append(property_type)
                     else:
-                        if model_property.get('$ref') is not None:
-                            property_type = model_property.get('$ref')
+                        property_type = recursive_search(model_property, '$ref')
+                        if property_type is None:
+                            property_type = recursive_search(model_property, 'format')
+                            if property_type is None:
+                                property_type = recursive_search(model_property, 'type')
+                        else:
                             property_type = property_type.split("/")[-1].split(".")[-1]  # Get ref name
-                        else:
-                            if model_property.get('x-enum-reference') is not None:
-                                property_type = model_property.get('x-enum-reference')['$ref']
-                                property_type = property_type.split("/")[-1].split(".")[-1]  # Get ref name
-                            else:
-                                if model_property.get('format') is not None:
-                                    property_type = model_property.get('format')
-                                else:
-                                    property_type = model_property.get('type')
-                        # Check if property is a primative
-                        if property_type in type_conversion_dict.keys():
-                            property_type = type_conversion_dict[property_type]
-                        if model_property.get('$ref') is not None:
                             model_imports.append(property_type)
-                        else:
-                            if model_property.get('x-enum-reference') is not None:
-                                enum_imports.append(property_type)
+                    if property_type in type_conversion_dict:
+                        property_type = type_conversion_dict[property_type]
+                    #################################
+                    #if isArray:
+                    #    items = model_property['items']
+                    #    if items.get('$ref') is not None:
+                    #        property_type = items.get('$ref').split("/")[-1].split(".")[-1]  # Get ref name
+                    #    else:
+                    #        if items.get('x-enum-reference') is not None:
+                    #            property_type = items.get('x-enum-reference')['$ref']
+                    #            property_type = property_type.split("/")[-1].split(".")[-1]  # Get ref name
+                    #        else:
+                    #            if items.get('format') is not None:
+                    #                property_type = items.get('format')
+                    #            else:
+                    #                property_type = model_property.get('type')
+                    #    if property_type in type_conversion_dict:
+                    #        property_type = type_conversion_dict[property_type]
+                    #    if items.get('$ref') is not None:
+                    #        model_imports.append(property_type)
+                    #    else:
+                    #        if items.get('x-enum-reference') is not None:
+                    #            enum_imports.append(property_type)
+                    # If property is not an array
+                    #else:
+                    #    if model_property.get('$ref') is not None:
+                    #        property_type = model_property.get('$ref')
+                    #        property_type = property_type.split("/")[-1].split(".")[-1]  # Get ref name
+                    #    else:
+                    #        if model_property.get('x-enum-reference') is not None:
+                    #            property_type = model_property.get('x-enum-reference')['$ref']
+                    #            property_type = property_type.split("/")[-1].split(".")[-1]  # Get ref name
+                    #        else:
+                    #            if model_property.get('format') is not None:
+                    #                property_type = model_property.get('format')
+                    #            else:
+                    #                property_type = model_property.get('type')
+                        # Check if property is a primative
+                    #    if property_type in type_conversion_dict.keys():
+                    #        property_type = type_conversion_dict[property_type]
+                    #    if model_property.get('$ref') is not None:
+                    #        model_imports.append(property_type)
+                    #    else:
+                    #        if model_property.get('x-enum-reference') is not None:
+                    #            enum_imports.append(property_type)
                     all_properties.append({
                         'property_type': property_type,
                         'property_name': property_name,
@@ -201,7 +231,7 @@ def compile_api_parameters(parameter_data):
     param_json = []  # List allows us to dynamically add parameters
     imports = []  # If any parameters require enums, we will add them here for importing later
     has_query = False
-    for key in parameter_data:
+    for k, v in parameter_data:
         param_name = key['name']
         param_desc = key['description']
         type = key['schema']['type']  # The data type of the parameter: str, int, lst, ...
