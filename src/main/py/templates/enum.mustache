@@ -1,18 +1,7 @@
 package lib.enums;
-//import enum
 
-
-class {{class_name}}(enum.Enum):
-{{#values}}
-    // {{description}}
-    {{identifier}} = {{numericValue}}
-
-{{/values}}
-// value not found fallback
-ProtectedInvalidEnumValue = 999999999
 
 public enum {{class_name}}{
-
 
 String entityValue;
 {{#values}}
@@ -38,3 +27,4 @@ private {{enum_type}} enumValue;
 	public String getTypeDefinition() {
 		return enumValue;
 	}
+}
