@@ -2,29 +2,26 @@ package lib.enums;
 
 
 public enum {{class_name}}{
-
-String entityValue;
-{{#values}}
+    {{#values}}
     // {{description}}
     {{identifier}}({{numericValue}}),
 
-{{/values}}
-// value not found fallback
-ProtectedInvalidEnumValue({{#is_string}}"{{/is_string}}999999999{{#is_string}}"{{/is_string});
+    {{/values}}
+    // value not found fallback
+    ProtectedInvalidEnumValue(999999999);
 
-private {{enum_type}} enumValue;
+    private {{enum_type}} enumValue;
 
-	private ManifestEntityTypes(String bungieEnumValue) {
+	private {{class_name}}({{enum_type}} bungieEnumValue) {
 		this.enumValue = bungieEnumValue;
 	}
 
-        @Override
-        public String toString(){
-            return enumValue;
-        }
-        
-        @Override
-	public String getTypeDefinition() {
-		return enumValue;
-	}
+    @Override
+    public String toString(){
+        return enumValue + "";
+    }
+
+    public {{enum_type}} getTypeDefinition() {
+	    return enumValue;
+    }
 }

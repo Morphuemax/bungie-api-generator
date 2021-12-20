@@ -20,7 +20,7 @@ public class {{class_name}}{
     Gson gson = new Gson();
     {{class_name}} temp = gson.fromJson(jsonElement, {{class_name}}.class);
     {{#properties}}
-    this.{{property_name}} = {{property_name}};
+    this.{{property_name}} = temp.get{{Property_Name}}();
     {{/properties}}
     // Allows Garbage Collector to delete 'temp' to free up space
     temp = null;

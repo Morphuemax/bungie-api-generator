@@ -49,6 +49,9 @@ def compile_enum_data(data):
         if isEnum:
             class_name = k.split('.')[-1]  # Keys are formated {Tag}.{Name}
             values = []
+            enum_type = data[k].get('format')
+            if enum_type in type_conversion_dict:
+                enum_type = type_conversion_dict[enum_type]
             for value in data[k].get('x-enum-values'):  # This will give us the value, identifier and description
                 numerical_value = value.get('numericValue')
                 identifier = value.get('identifier')
@@ -60,6 +63,7 @@ def compile_enum_data(data):
                                })
 
             enum = {'class_name': class_name,
+                    'enum_type': enum_type,
                     'values': values
                     }
             # Name:{
@@ -122,23 +126,21 @@ def compile_model_data(data):
                     property_name = k2
                     isArray = True if model_property.get('type') == "array" else False
                     # Check if property is an enum
-                    property_type = json_extract(model_property, 'x-enum-value')
+                    property_type = json_extract(model_property, '$ref')
                     if property_type:
-                        property_type = property_type[0]['$ref']
+                        property_type = property_type[0]
                         property_type = property_type.split("/")[-1].split(".")[-1]  # Get ref name
-                        enum_imports.append(property_type)
+                        if 'x-enum-reference' in model_property:
+                            enum_imports.append(property_type)
+                        else:
+                            model_imports.append(property_type)
                     else:
-                        property_type = json_extract(model_property, '$ref')
-                        # If property is not another model
                         if not property_type:
                             property_type = json_extract(model_property, 'format')
                             if not property_type:
                                 property_type = json_extract(model_property, 'type')
                             property_type = property_type[0]
-                        # Property is another model
-                        else:
-                            property_type = property_type[0].split("/")[-1].split(".")[-1]  # Get ref name
-                            model_imports.append(property_type)
+
                     # If property is not a model, convert it using dictionary
                     if property_type in type_conversion_dict:
                         property_type = type_conversion_dict[property_type]
