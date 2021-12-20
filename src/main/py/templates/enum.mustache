@@ -10,3 +10,31 @@ class {{class_name}}(enum.Enum):
 {{/values}}
 // value not found fallback
 ProtectedInvalidEnumValue = 999999999
+
+public enum {{class_name}}{
+
+
+String entityValue;
+{{#values}}
+    // {{description}}
+    {{identifier}}({{numericValue}}),
+
+{{/values}}
+// value not found fallback
+ProtectedInvalidEnumValue({{#is_string}}"{{/is_string}}999999999{{#is_string}}"{{/is_string});
+
+private {{enum_type}} enumValue;
+
+	private ManifestEntityTypes(String bungieEnumValue) {
+		this.enumValue = bungieEnumValue;
+	}
+
+        @Override
+        public String toString(){
+            return enumValue;
+        }
+        
+        @Override
+	public String getTypeDefinition() {
+		return enumValue;
+	}
