@@ -18,7 +18,12 @@ public class {{class_name}}{
 
   public {{class_name}}(JsonElement jsonElement){
     Gson gson = new Gson();
-    this = gson.fromJson(jsonElement, {{class_name}}.class);
+    {{class_name}} temp = gson.fromJson(jsonElement, {{class_name}}.class);
+    {{#properties}}
+    this.{{property_name}} = {{property_name}};
+    {{/properties}}
+    // Allows Garbage Collector to delete 'temp' to free up space
+    temp = null;
   }
   
   {{#properties}}
