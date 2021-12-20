@@ -35,14 +35,14 @@ def recursive_search(json_input, lookup_key):
 
 def compile_enum_data(data):
     all_enums = {}  # Create empty dict which we will fill and return
-    for k, v in data:
+    for k in data:
         isEnum = False  # Assume it's not an enum until known
-        if v.get('enum') is not None:  # Confirm that JSON has 'enum' key
+        if data[k].get('enum') is not None:  # Confirm that JSON has 'enum' key
             isEnum = True
         if isEnum:
             class_name = k.split('.')[-1]  # Keys are formated {Tag}.{Name}
             values = []
-            for value in v.get('x-enum-values'):  # This will give us the value, identifier and description
+            for value in data[k].get('x-enum-values'):  # This will give us the value, identifier and description
                 numerical_value = value.get('numericValue')
                 identifier = value.get('identifier')
                 # Not every enum has a description
@@ -98,25 +98,26 @@ def generate_enums(data_json):
 
 def compile_model_data(data):
     all_models = {}
-    for k,v in data:
+    for k in data:
         enum_imports = []
         model_imports = []
         isResponse = False
-        if v.get('type') == "object":  # Confirm that JSON has 'enum' key
+        if data[k].get('type') == "object":  # Confirm that JSON has 'enum' key
             isResponse = True
         if isResponse:
             class_name = k.split("/")[-1].split(".")[-1]  # Get ref name
-            print(key)
+            print(k)
             all_properties = []
-            model_properties = data[key].get('properties')
+            model_properties = data[k].get('properties')
             if model_properties is not None:
-                for k2, v2 in model_properties:
-                    model_property = v2
+                for k2 in model_properties:
+                    model_property = model_properties[k2]
                     property_name = k2
                     print("\t"+property_name)
                     isArray = True if model_property.get('type') == "array" else False
                     property_type = recursive_search(model_property, 'x-enum-value')
                     if property_type is not None:
+                        print(property_type)
                         property_type = property_type['$ref']
                         property_type = property_type.split("/")[-1].split(".")[-1]  # Get ref name
                         enum_imports.append(property_type)
