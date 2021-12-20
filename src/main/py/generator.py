@@ -22,14 +22,14 @@ type_conversion_dict = {
 def recursive_search(json_input, lookup_key):
     if isinstance(json_input, dict):
         for k, v in json_input.iteritems():
-            if k == lookup_key:
+            if k == recursive_search:
                 yield v
             else:
-                for child_val in item_generator(v, lookup_key):
+                for child_val in recursive_search(v, lookup_key):
                     yield child_val
     elif isinstance(json_input, list):
         for item in json_input:
-            for item_val in item_generator(item, lookup_key):
+            for item_val in recursive_search(item, lookup_key):
                 yield item_val
 
 
