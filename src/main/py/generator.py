@@ -142,11 +142,6 @@ def compile_model_data(data):
                     # If property is not a model, convert it using dictionary
                     if property_type in type_conversion_dict:
                         property_type = type_conversion_dict[property_type]
-                        
-                    # There's one reference to each of these, the IEnumerable is a ResponseObject and is not needed
-                    # We just want the type of the response
-                    if "IEnumerableOf" in property_type:
-                        property_type = property_type.replace("IEnumerableOf", "")
                                                
                     all_properties.append({
                         'property_type': property_type,
@@ -297,6 +292,11 @@ def compile_api_data(data):
 
         return_type = path_data[endpoint_type]['responses']['200']['$ref']
         return_type = return_type.split("/")[-1].split(".")[-1]  # Get ref name
+        # There's one reference to each of these, the IEnumerable is a ResponseObject and is not needed
+        # We just want the type of the response
+        if "IEnumerableOf" in return_type:
+            return_type = return_type.replace("IEnumerableOf", "")
+
         if type_conversion_dict.get(return_type) is not None:
             return_type = type_conversion_dict.get(return_type)
 

@@ -18,7 +18,7 @@ public class {{class_name}}{
 
   public {{class_name}}(JsonElement jsonElement){
     Gson gson = new Gson();
-    this = gson.fromJson(jsonElement, this.class);
+    this = gson.fromJson(jsonElement, {{class_name}}.class);
   }
   
   {{#properties}}
