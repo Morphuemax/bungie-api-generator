@@ -109,7 +109,7 @@ def compile_model_data(data):
         enum_imports = []
         model_imports = []
         isResponse = False
-        if data[k].get('type') == "object":  # Confirm that JSON has 'enum' key
+        if data[k].get('type') == "object":  # Model is defined by having object type
             isResponse = True
         if isResponse:
             class_name = k.split("/")[-1].split(".")[-1]  # Get ref name
@@ -120,8 +120,8 @@ def compile_model_data(data):
                 for k2 in model_properties:
                     model_property = model_properties[k2]
                     property_name = k2
-                    print("\t"+property_name)
                     isArray = True if model_property.get('type') == "array" else False
+                    # Check if property is an enum
                     property_type = json_extract(model_property, 'x-enum-value')
                     if property_type:
                         property_type = property_type[0]['$ref']
@@ -129,59 +129,25 @@ def compile_model_data(data):
                         enum_imports.append(property_type)
                     else:
                         property_type = json_extract(model_property, '$ref')
+                        # If property is not another model
                         if not property_type:
                             property_type = json_extract(model_property, 'format')
                             if not property_type:
                                 property_type = json_extract(model_property, 'type')
                             property_type = property_type[0]
+                        # Property is another model
                         else:
                             property_type = property_type[0].split("/")[-1].split(".")[-1]  # Get ref name
                             model_imports.append(property_type)
+                    # If property is not a model, convert it using dictionary
                     if property_type in type_conversion_dict:
                         property_type = type_conversion_dict[property_type]
-                    #################################
-                    #if isArray:
-                    #    items = model_property['items']
-                    #    if items.get('$ref') is not None:
-                    #        property_type = items.get('$ref').split("/")[-1].split(".")[-1]  # Get ref name
-                    #    else:
-                    #        if items.get('x-enum-reference') is not None:
-                    #            property_type = items.get('x-enum-reference')['$ref']
-                    #            property_type = property_type.split("/")[-1].split(".")[-1]  # Get ref name
-                    #        else:
-                    #            if items.get('format') is not None:
-                    #                property_type = items.get('format')
-                    #            else:
-                    #                property_type = model_property.get('type')
-                    #    if property_type in type_conversion_dict:
-                    #        property_type = type_conversion_dict[property_type]
-                    #    if items.get('$ref') is not None:
-                    #        model_imports.append(property_type)
-                    #    else:
-                    #        if items.get('x-enum-reference') is not None:
-                    #            enum_imports.append(property_type)
-                    # If property is not an array
-                    #else:
-                    #    if model_property.get('$ref') is not None:
-                    #        property_type = model_property.get('$ref')
-                    #        property_type = property_type.split("/")[-1].split(".")[-1]  # Get ref name
-                    #    else:
-                    #        if model_property.get('x-enum-reference') is not None:
-                    #            property_type = model_property.get('x-enum-reference')['$ref']
-                    #            property_type = property_type.split("/")[-1].split(".")[-1]  # Get ref name
-                    #        else:
-                    #            if model_property.get('format') is not None:
-                    #                property_type = model_property.get('format')
-                    #            else:
-                    #                property_type = model_property.get('type')
-                        # Check if property is a primative
-                    #    if property_type in type_conversion_dict.keys():
-                    #        property_type = type_conversion_dict[property_type]
-                    #    if model_property.get('$ref') is not None:
-                    #        model_imports.append(property_type)
-                    #    else:
-                    #        if model_property.get('x-enum-reference') is not None:
-                    #            enum_imports.append(property_type)
+                        
+                    # There's one reference to each of these, the IEnumerable is a ResponseObject and is not needed
+                    # We just want the type of the response
+                    if "IEnumerableOf" in property_type:
+                        property_type = property_type.replace("IEnumerableOf", "")
+                                               
                     all_properties.append({
                         'property_type': property_type,
                         'property_name': property_name,
@@ -189,6 +155,7 @@ def compile_model_data(data):
                         'isArray': isArray,
                         'isRequest': True if "Request" in class_name else False
                     })
+                # Each entry corresponds to a seperate model
                 entry = {
                     class_name: {
                         'imports': {
@@ -209,7 +176,7 @@ def generate_models(data_json):
     files = glob.glob(path + '*', recursive=True)
     isExist = os.path.exists(path)
 
-    # We want to clear the enums folder so we can generate a new one
+    # We want to clear the models folder so we can generate a new one
     if isExist:
         try:
             shutil.rmtree(path)
@@ -219,12 +186,12 @@ def generate_models(data_json):
     os.makedirs(path)
     print("Cleared Models directory")
     print("Generating Models")
-    # For each enum we are making a separate file
+    # For each model we are making a separate file
     for key in data_json:
         template_path = "./templates/model-class.mustache"
         isFile = os.path.isfile(template_path)
         with open(template_path, 'r') as f:
-            # Render enum.mustache with enum data we collected
+            # Render model-class.mustache with model data we collected
             rendered = chevron.render(f, data_json[key])
         api_file = open(path + key + ".java", 'x')
         api_file.write(rendered)
@@ -369,14 +336,19 @@ def compile_api_data(data):
             }
             all_methods.update(entry)
         all_methods[endpoint_tag]['methods'].append(method_info)
-        # TODO: See if reference/model imports are needed
+        # Grab/Add enums needed for parameters to imports
         for import_ref in import_data:
+            # Check if enum is already imported
             if import_ref not in all_methods[endpoint_tag]['imports']['enums']:
                 all_methods[endpoint_tag]['imports']['enums'].append(import_ref)
+        # Add model of RequestBody to imports
         if request_type != "":
+            # Check if model is already imported
             if request_type not in all_methods[endpoint_tag]['imports']['models']:
                 if request_type not in type_conversion_dict.values():
                     all_methods[endpoint_tag]['imports']['models'].append(request_type)
+        # Add model of the return type to imports
+        # Check if model is already imported
         if return_type not in all_methods[endpoint_tag]['imports']['models']:
             if return_type not in type_conversion_dict.values():
                 all_methods[endpoint_tag]['imports']['models'].append(return_type)
