@@ -19,18 +19,25 @@ type_conversion_dict = {
     "": "String"
 }
 
-def recursive_search(json_input, lookup_key):
-    if isinstance(json_input, dict):
-        for k, v in json_input.iteritems():
-            if k == recursive_search:
-                yield v
-            else:
-                for child_val in recursive_search(v, lookup_key):
-                    yield child_val
-    elif isinstance(json_input, list):
-        for item in json_input:
-            for item_val in recursive_search(item, lookup_key):
-                yield item_val
+def json_extract(obj, key):
+    """Recursively fetch values from nested JSON."""
+    arr = []
+
+    def extract(obj, arr, key):
+        """Recursively search for values of key in JSON tree."""
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                if isinstance(v, (dict, list)):
+                    extract(v, arr, key)
+                elif k == key:
+                    arr.append(v)
+        elif isinstance(obj, list):
+            for item in obj:
+                extract(item, arr, key)
+        return arr
+
+    values = extract(obj, arr, key)
+    return values
 
 
 def compile_enum_data(data):
@@ -115,18 +122,18 @@ def compile_model_data(data):
                     property_name = k2
                     print("\t"+property_name)
                     isArray = True if model_property.get('type') == "array" else False
-                    property_type = recursive_search(model_property, 'x-enum-value')
+                    property_type = json_extract(model_property, 'x-enum-value')
                     if property_type is not None:
                         print(property_type)
                         property_type = property_type['$ref']
                         property_type = property_type.split("/")[-1].split(".")[-1]  # Get ref name
                         enum_imports.append(property_type)
                     else:
-                        property_type = recursive_search(model_property, '$ref')
+                        property_type = json_extract(model_property, '$ref')
                         if property_type is None:
-                            property_type = recursive_search(model_property, 'format')
+                            property_type = json_extract(model_property, 'format')
                             if property_type is None:
-                                property_type = recursive_search(model_property, 'type')
+                                property_type = json_extract(model_property, 'type')
                         else:
                             property_type = property_type.split("/")[-1].split(".")[-1]  # Get ref name
                             model_imports.append(property_type)
