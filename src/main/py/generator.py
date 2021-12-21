@@ -389,7 +389,21 @@ def generate_api(data_json):
     print("!All API files created!")
 
     "#######################################################################"
-
+    
+    
+def copy_helpers():
+    helpers_folder_path = '../java/helpers/'
+    write_path = '../../../generated-src/main/java/Helpers/'
+    HttpUtils = 'HttpUtils.java'
+    OAuth = 'OAuth.java'
+    ResponseObj = 'ResponseObject.java'
+    read_files = [HttpUtils, OAuth, ResponseObj]
+    for file in read_files:
+        src_file = open((helpers_folder_path + file), 'rb')
+        dest_file = open((write_path + file),'wb')
+        print("Copied " + file)
+    print("!All Helpers Copied")
+    
 
 def generate():
     # apiFile = './api-src/openapi.json'
@@ -409,6 +423,8 @@ def generate():
     generate_models(compiled_model_data)
     print()
     generate_api(compiled_api_data)
+    print()
+    copy_helpers()
 
 
 if __name__ == '__main__':
