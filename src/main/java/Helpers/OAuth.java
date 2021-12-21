@@ -1,5 +1,6 @@
 package Helpers;
 
+import Helpers.HttpUtils;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -38,9 +39,9 @@ public class OAuth {
         System.out.println("Sending 'POST' request to Bungie.Net : " + url);
         con.setDoOutput(true);
 
-        Helpers.HttpUtils.addRequestBody(con, urlParameters);
+        HttpUtils.addRequestBody(con, urlParameters);
 
-        String response = Helpers.HttpUtils.postRequest(con);
+        String response = HttpUtils.postRequest(con);
         if (response != null) {
             JsonParser parser = new JsonParser();
             oAuthJson = (JsonObject) parser.parse(response);

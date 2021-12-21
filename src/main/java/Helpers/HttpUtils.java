@@ -1,5 +1,4 @@
-package Helpers;//*
-// * To change this license header, choose License Headers in Project Properties.
+package Helpers;// * To change this license header, choose License Headers in Project Properties.
 // * To change this template file, choose Tools | Templates
 // * and open the template in the editor.
 // */
@@ -63,7 +62,7 @@ public class HttpUtils {
         try {
             con.setRequestProperty("Authorization", "Bearer " + oAuth.getAccessToken());
         } catch (Exception e) {
-            System.out.println("OAuth Access Token not available.  OAuth may not have been initialized.");
+            System.out.println("Helpers.OAuth Access Token not available.  Helpers.OAuth may not have been initialized.");
         }
 
         con.setDoOutput(true);
