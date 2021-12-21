@@ -2,8 +2,10 @@ import json
 import os
 import glob
 import shutil
-import chevron
+import threading
 
+import chevron
+from threading import Thread
 
 type_conversion_dict = {
     "boolean": "Boolean",
@@ -18,6 +20,7 @@ type_conversion_dict = {
     "object": "Object",
     "": "String"
 }
+
 
 def json_extract(obj, key):
     """Recursively fetch values from nested JSON."""
@@ -38,6 +41,22 @@ def json_extract(obj, key):
 
     values = extract(obj, arr, key)
     return values
+
+
+def get_path_data():
+    # apiFile = './api-src/openapi.json'
+    apiFile = '../../../api-src/openapi.json'
+    with open(apiFile, 'r', encoding='utf-8') as data_file:
+        rawData = json.load(data_file)
+    return rawData.get('paths')
+
+
+def get_schema_data():
+    # apiFile = './api-src/openapi.json'
+    apiFile = '../../../api-src/openapi.json'
+    with open(apiFile, 'r', encoding='utf-8') as data_file:
+        rawData = json.load(data_file)
+    return rawData.get('components').get('schemas')
 
 
 def compile_enum_data(data):
@@ -75,7 +94,8 @@ def compile_enum_data(data):
     return all_enums
 
 
-def generate_enums(data):
+def generate_enums():
+    data = get_schema_data()
     compiled_enum_data = compile_enum_data(data)
     path = '../../../generated-src/main/java/lib/enums/'
 
@@ -145,11 +165,11 @@ def compile_model_data(data):
                     # If property is not a model, convert it using dictionary
                     if property_type in type_conversion_dict:
                         property_type = type_conversion_dict[property_type]
-                                               
+
                     all_properties.append({
                         'property_type': property_type,
                         'property_name': property_name,
-                        'Property_Name': property_name[0].upper()+property_name[1:],
+                        'Property_Name': property_name[0].upper() + property_name[1:],
                         'isArray': isArray,
                         'isRequest': True if "Request" in class_name else False
                     })
@@ -168,7 +188,8 @@ def compile_model_data(data):
     return all_models
 
 
-def generate_models(data):
+def generate_models():
+    data = get_schema_data()
     compiled_model_data = compile_model_data(data)
     path = '../../../generated-src/main/java/lib/models/'
 
@@ -186,12 +207,12 @@ def generate_models(data):
     print("Cleared Models directory")
     print("Generating Models")
     # For each model we are making a separate file
-    for key in data_json:
+    for key in compiled_model_data:
         template_path = "./templates/model-class.mustache"
         isFile = os.path.isfile(template_path)
         with open(template_path, 'r') as f:
             # Render model-class.mustache with model data we collected
-            rendered = chevron.render(f, data_json[key])
+            rendered = chevron.render(f, compiled_model_data[key])
         api_file = open(path + key + ".java", 'x')
         api_file.write(rendered)
         api_file.close()
@@ -359,7 +380,8 @@ def compile_api_data(data):
     return all_methods
 
 
-def generate_api(data):
+def generate_api():
+    data = get_path_data()
     compiled_api_data = compile_api_data(data)
     path = '../../../generated-src/main/java/lib/api/'
 
@@ -377,11 +399,11 @@ def generate_api(data):
     print("Cleared API directory")
     print("Generating API")
     # For each tag we are making a separate file
-    for key in data_json:
+    for key in compiled_api_data:
         template_path = "./templates/api-class.mustache"
         with open(template_path, 'r') as f:
             # Render api.mustache with method data we collected
-            rendered = chevron.render(f, data_json[key])
+            rendered = chevron.render(f, compiled_api_data[key])
         # Some endpoints don't have a tag, we will lump them together in a 'Misc' file
         if key == '':
             key = 'Misc'
@@ -392,42 +414,50 @@ def generate_api(data):
     print("!All API files created!")
 
     "#######################################################################"
-    
-    
+
+
 def copy_helpers():
-    helpers_folder_path = '../java/helpers/'
+    helpers_folder_path = '../java/Helpers/'
     write_path = '../../../generated-src/main/java/Helpers/'
     HttpUtils = 'HttpUtils.java'
     OAuth = 'OAuth.java'
     ResponseObj = 'ResponseObject.java'
     read_files = [HttpUtils, OAuth, ResponseObj]
+
+
+    isExist = os.path.exists(write_path)
+
+    # We want to clear the api folder so we can generate a new one
+    if isExist:
+        try:
+            shutil.rmtree(write_path)
+        except OSError as e:
+            print("Error: %s : %s" % (write_path, e.strerror))
+    # Create empty directory
+    os.makedirs(write_path)
+
     for file in read_files:
-        src_file = open((helpers_folder_path + file), 'rb')
-        dest_file = open((write_path + file),'wb')
+        src_file = helpers_folder_path + file
+        dest_file = write_path + file
+        src_file = open(src_file, 'r')
+        dest_file = open(dest_file, 'x')
         shutil.copyfileobj(src_file, dest_file)
         print("Copied " + file)
     print("!All Helpers Copied")
-    
+
     "#####################################################################"
-    
+
 
 def generate():
-    # apiFile = './api-src/openapi.json'
-    apiFile = '../../../api-src/openapi.json'
-    with open(apiFile, 'r', encoding='utf-8') as data_file:
-        rawData = json.load(data_file)
-    pathData = rawData.get('paths')
-    schemaData = rawData.get('components').get('schemas')
-
     print("Generating Sources:\n")
     try:
-        thread.start_new_thread(generate_enums, schemaData)
-        thread.start_new_thread(generate_models, schemaData)
-        thread.start_new_thread(generate_api, pathData)
-        thread.start_new_thread(copy_helpers)
+        threading.Thread(target=generate_enums).start()
+        threading.Thread(target=generate_models).start()
+        threading.Thread(target=generate_api).start()
+        threading.Thread(target=copy_helpers).start()
     except:
         print("Error Creating Thread")
-        
+
 
 if __name__ == '__main__':
     generate()
