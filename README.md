@@ -8,6 +8,6 @@ Intended to allow a user easily call bungie-api endpoints. Endpoint responses re
 
 * End User can call endpoint methods and then use getters to navigate responses
 
-*Helper folder for HttpUtils, OAuth, and ResponseObject will be added when ready*
+*Helper folder for Helpers.HttpUtils, Helpers.OAuth, and ResponseObject will be added when ready*
 
 **NOTE: Generated-src uses com.google.gson**
