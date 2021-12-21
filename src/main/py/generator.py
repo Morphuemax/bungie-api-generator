@@ -3,7 +3,6 @@ import os
 import glob
 import shutil
 import chevron
-import threadTools.asyncThread
 
 
 type_conversion_dict = {
