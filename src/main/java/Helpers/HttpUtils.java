@@ -35,7 +35,7 @@ public class HttpUtils {
         this.oAuth = oAuth;
     }
 
-    protected JsonObject getBungieEndpoint(String endpoint) throws IOException {
+    public JsonObject getBungieEndpoint(String endpoint) throws IOException {
         URL obj = new URL(endpoint);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
         // Set header
@@ -53,7 +53,7 @@ public class HttpUtils {
         return json;
     }
 
-    protected JsonObject postBungieEndpoint(String endpoint, String requestBody) throws IOException {
+    public JsonObject postBungieEndpoint(String endpoint, String requestBody) throws IOException {
         URL obj = new URL(endpoint);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
