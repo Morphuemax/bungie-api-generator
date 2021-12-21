@@ -401,8 +401,11 @@ def copy_helpers():
     for file in read_files:
         src_file = open((helpers_folder_path + file), 'rb')
         dest_file = open((write_path + file),'wb')
+        shutil.copyfileobj(src_file, dest_file)
         print("Copied " + file)
     print("!All Helpers Copied")
+    
+    "#####################################################################"
     
 
 def generate():
