@@ -3,6 +3,7 @@ import os
 import glob
 import shutil
 import chevron
+import threadTools.asyncThread
 
 
 type_conversion_dict = {
@@ -75,7 +76,8 @@ def compile_enum_data(data):
     return all_enums
 
 
-def generate_enums(data_json):
+def generate_enums(data):
+    compiled_enum_data = compile_enum_data(data)
     path = '../../../generated-src/main/java/lib/enums/'
 
     files = glob.glob(path + '*', recursive=True)
@@ -92,12 +94,12 @@ def generate_enums(data_json):
     print("Cleared Enums directory")
     print("Generating Enums")
     # For each enum we are making a separate file
-    for key in data_json:
+    for key in compiled_enum_data:
         template_path = "./templates/enum.mustache"
         isFile = os.path.isfile(template_path)
         with open(template_path, 'r') as f:
             # Render enum.mustache with enum data we collected
-            rendered = chevron.render(f, data_json[key])
+            rendered = chevron.render(f, compiled_enum_data[key])
         api_file = open(path + key + ".java", 'x')
         api_file.write(rendered)
         api_file.close()
@@ -167,7 +169,8 @@ def compile_model_data(data):
     return all_models
 
 
-def generate_models(data_json):
+def generate_models(data):
+    compiled_model_data = compile_model_data(data)
     path = '../../../generated-src/main/java/lib/models/'
 
     files = glob.glob(path + '*', recursive=True)
@@ -357,7 +360,8 @@ def compile_api_data(data):
     return all_methods
 
 
-def generate_api(data_json):
+def generate_api(data):
+    compiled_api_data = compile_api_data(data)
     path = '../../../generated-src/main/java/lib/api/'
 
     files = glob.glob(path + '*', recursive=True)
@@ -417,18 +421,14 @@ def generate():
     schemaData = rawData.get('components').get('schemas')
 
     print("Generating Sources:\n")
-    compiled_enum_data = compile_enum_data(schemaData)
-    compiled_model_data = compile_model_data(schemaData)
-    compiled_api_data = compile_api_data(pathData)
-
-    generate_enums(compiled_enum_data)
-    print()
-    generate_models(compiled_model_data)
-    print()
-    generate_api(compiled_api_data)
-    print()
-    copy_helpers()
-
+    try:
+        thread.start_new_thread(generate_enums, schemaData)
+        thread.start_new_thread(generate_models, schemaData)
+        thread.start_new_thread(generate_api, pathData)
+        thread.start_new_thread(copy_helpers)
+    except:
+        print("Error Creating Thread")
+        
 
 if __name__ == '__main__':
     generate()
