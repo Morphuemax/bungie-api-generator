@@ -5,6 +5,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.HashMap;
 import org.apache.logging.log4j.message.MapMessage;
+import Helpers.ResponseObject;
+import Helpers.HttpUtils;
+import java.io.IOException;
 {{#imports}}
 {{#enums}}
 import lib.enums.{{.}};
@@ -30,7 +33,7 @@ public class {{tag}}{
         {{#param_info}}
         {{#required}}{{param_type}}{{#isArray}}[]{{/isArray}} {{param_name}}, {{/required}}
         {{/param_info}}
-        {{#isPost}}{{request_type}} requestBody, {{/isPost}}HttpUtils util)
+        {{#isPost}}{{request_type}} requestBody, {{/isPost}}Helpers.HttpUtils util) throws IOException
     {
         String path_unformatted = "{{path}}";
         HashMap map = new HashMap();
@@ -38,7 +41,7 @@ public class {{tag}}{
         map.add("{{param_name}}", {{param_name}});
         {{/required}}{{/param_info}}
         String path = MapFormat.format(path_unformatted, map);
-        JsonObject responseJson = utils.{{endpoint_type}}BungieEndpoint(path);
+        JsonObject responseJson = util.{{endpoint_type}}BungieEndpoint(path);
         System.out.println(responseJson);
         ResponseObject<{{return_type}}> response = new ResponseObject(responseJson);
         if(!responseJson.get("ErrorCode").equals(200)){
@@ -51,8 +54,8 @@ public class {{tag}}{
     public static ResponseObject<{{return_type}}> {{method_name}}(
         {{#param_info}}{{param_type}}{{#isArray}}[]{{/isArray}} {{param_name}},
         {{/param_info}}{{#isPost}}{{request_type}} requestBody, {{/isPost}}
-        HttpUtils util
-    ){
+        Helpers.HttpUtils util
+    )throws IOException{
         String path_unformatted = "{{path}}";
         HashMap map = new HashMap();
         {{#param_info}}{{#required}}
@@ -62,7 +65,7 @@ public class {{tag}}{
         String path_params = "?";
         path_params += {{#param_info}}{{^required}}"{{param_name}}="+{{param_name}}{{^last}}+"&"+{{/last}}{{/required}}{{/param_info}};
         path += path_params;
-        JsonObject responseJson = utils.{{endpoint_type}}BungieEndpoint(path);
+        JsonObject responseJson = util.{{endpoint_type}}BungieEndpoint(path);
         System.out.println(responseJson);
         ResponseObject<{{return_type}}> response = new ResponseObject(responseJson);
         if(!responseJson.get("ErrorCode").equals(200)){
