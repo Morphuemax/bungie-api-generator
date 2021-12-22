@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.HashMap;
-import org.apache.logging.log4j.message.MapMessage;
+import org.openide.util.MapFormat;
 import Helpers.ResponseObject;
 import Helpers.HttpUtils;
 import java.io.IOException;
@@ -38,7 +38,7 @@ public class {{tag}}{
         String path_unformatted = "{{path}}";
         HashMap map = new HashMap();
         {{#param_info}}{{#required}}
-        map.add("{{param_name}}", {{param_name}});
+            map.put("{{param_name}}", {{param_name}});
         {{/required}}{{/param_info}}
         String path = MapFormat.format(path_unformatted, map);
         JsonObject responseJson = util.{{endpoint_type}}BungieEndpoint(path);
@@ -59,7 +59,7 @@ public class {{tag}}{
         String path_unformatted = "{{path}}";
         HashMap map = new HashMap();
         {{#param_info}}{{#required}}
-        map.add("{{param_name}}", {{param_name}});
+            map.put("{{param_name}}", {{param_name}});
         {{/required}}{{/param_info}}
         String path = MapFormat.format(path_unformatted, map);
         String path_params = "?";
