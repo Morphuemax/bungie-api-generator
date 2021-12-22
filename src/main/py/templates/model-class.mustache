@@ -1,4 +1,6 @@
 package lib.models;
+
+import java.util.Map;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import Helpers.ResponseObject;
@@ -13,28 +15,31 @@ import lib.models.{{.}};
 
 public class {{class_name}}{
 
-  {{#properties}}
-  {{property_type}}{{#isArray}}[]{{/isArray}} {{property_name}};
-  {{/properties}}
-
-  public {{class_name}}(JsonElement jsonElement){
-    Gson gson = new Gson();
-    {{class_name}} temp = gson.fromJson(jsonElement, {{class_name}}.class);
     {{#properties}}
-    this.{{property_name}} = temp.get{{Property_Name}}();
+    {{{property_type}}}{{#isArray}}[]{{/isArray}} {{property_name}};
     {{/properties}}
-    // Allows Garbage Collector to delete 'temp' to free up space
-    temp = null;
-  }
-  
-  {{#properties}}
-  public {{property_type}}{{#isArray}}[]{{/isArray}} get{{Property_Name}}(){
-    return {{property_name}};
-  }
-  {{#isRequest}}
-  public void set{{Property_Name}}({{property_type}}{{#isArray}}[]{{/isArray}} {{property_name}}){
-    this.{{property_name}} = {{property_name}};
-  }
-  {{/isRequest}}
-  {{/properties}}
+    JsonElement json;
+
+    public {{class_name}}(JsonElement jsonElement){
+        json = jsonElement;
+        Gson gson = new Gson();
+        {{class_name}} temp = gson.fromJson(jsonElement, {{class_name}}.class);
+        {{#properties}}
+        this.{{property_name}} = temp.get{{Property_Name}}();
+        {{/properties}}
+        // Allows Garbage Collector to delete 'temp' to free up space
+        temp = null;
+    }
+
+    {{#properties}}
+    public {{{property_type}}}{{#isArray}}[]{{/isArray}} get{{Property_Name}}(){
+        return {{property_name}};
+    }
+    {{#isRequest}}
+    public void set{{Property_Name}}({{{property_type}}}{{#isArray}}[]{{/isArray}} {{property_name}}){
+        this.{{property_name}} = {{property_name}};
+    }
+    {{/isRequest}}
+    {{/properties}}
+    public JsonElement getAsJson(){ return json;}
 }
