@@ -36,7 +36,7 @@ def generate_enums():
         api_file = open(path + key + ".java", 'x')
         api_file.write(rendered)
         api_file.close()
-        print(key + ".java created...")
+        # print(key + ".java created...")
     print("!All Enum files created!")
 
     "##################################################################"
@@ -70,7 +70,7 @@ def generate_models():
         api_file = open(path + key + ".java", 'x')
         api_file.write(rendered)
         api_file.close()
-        print(key + ".java created...")
+        # print(key + ".java created...")
     print("!All Model files created!")
 
     "##################################################################"
@@ -106,7 +106,7 @@ def generate_api():
         api_file = open(path + key + ".java", 'x')
         api_file.write(rendered)
         api_file.close()
-        print(key + ".java created...")
+        # print(key + ".java created...")
     print("!All API files created!")
 
     "#######################################################################"
@@ -137,7 +137,7 @@ def copy_helpers():
         src_file = open(src_file, 'r')
         dest_file = open(dest_file, 'x')
         shutil.copyfileobj(src_file, dest_file)
-        print("Copied " + file)
+        # print("Copied " + file)
     print("!All Helpers Copied")
 
     "#####################################################################"

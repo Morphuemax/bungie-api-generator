@@ -19,14 +19,14 @@ def get_ref_name(ref):
     return ref.split("/")[-1].split(".")[-1]
 
 
-def get_type(param, enum_imports = [], model_imports = []):
+def get_type(param, enum_imports=[], model_imports=[]):
     isArray = True if param.get('type') == "array" else False
     # Check if property is an enum
     param_type = json_extract(param, '$ref')
     if param_type:
         param_type = param_type[0]
         param_type = get_ref_name(param_type)
-        if 'x-enum-reference' in param:
+        if 'x-enum-reference' or 'schema' in param:
             enum_imports.append(param_type)
         else:
             model_imports.append(param_type)
@@ -100,6 +100,7 @@ def get_schema_data():
     with open(apiFile, 'r', encoding='utf-8') as data_file:
         rawData = json.load(data_file)
     return rawData.get('components').get('schemas')
+
 
 def sortParams(params):
     i = len(params) - 1

@@ -37,6 +37,7 @@ def compile_enum_data(data):
 
     "############################################################"
 
+
 def compile_model_data(data):
     all_models = {}
     for k in data:
@@ -83,13 +84,13 @@ def compile_model_data(data):
 
 def compile_api_parameters(parameter_data):
     param_json = []  # List allows us to dynamically add parameters
-    imports = []  # If any parameters require enums, we will add them here for importing later
+    enums = []  # If any parameters require enums, we will add them here for importing later
     has_query = False
     for key in parameter_data:
         param_name = key['name']
         param_desc = key['description']
-        type = key['schema']['type']  # The data type of the parameter: str, int, lst, ...
-        param_type, isArray, imports, temp = get_type(key, imports, [])
+        # type = key['schema']['type']  # The data type of the parameter: str, int, lst, ...
+        param_type, isArray, enums, models = get_type(key, enums)
         in_type = key['in']  # Is "in" a path parameter or query parameter
         isQuery = True if in_type == "query" else False  # Used for template formatting
 
@@ -105,7 +106,7 @@ def compile_api_parameters(parameter_data):
                            })
         if isQuery:
             has_query = True
-    return param_json, imports, has_query
+    return param_json, enums, has_query
 
     "#############################################"
 
