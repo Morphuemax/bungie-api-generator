@@ -15,6 +15,9 @@ import lib.enums.{{.}};
 {{#models}}
 import lib.models.{{.}};
 {{/models}}
+{{#responses}}
+import lib.models.{{.}};
+{{/responses}}
 {{/imports}}
 
 public class {{tag}}{
@@ -23,17 +26,17 @@ public class {{tag}}{
     /**
     / {{method_desc}}
     {{#param_info}}
-    / @param {{param_name}}:{{param_type}}{{#isArray}}[]{{/isArray}} {{param_desc}}
+    / @param {{param_name}}:{{{param_type}}}{{#isArray}}[]{{/isArray}} {{param_desc}}
     {{/param_info}}
     /
     / <a href="https://bungie-net.github.io/#{{endpoint_tag}}.{{method_name}}">{{endpoint_tag}}.{{method_name}}</a>
     */
 
-    public static ResponseObject<{{return_type}}> {{method_name}}(
+    public static ResponseObject<{{{return_type}}}> {{method_name}}(
         {{#param_info}}
-        {{#required}}{{param_type}}{{#isArray}}[]{{/isArray}} {{param_name}}, {{/required}}
+        {{#required}}{{{param_type}}}{{#isArray}}[]{{/isArray}} {{param_name}}, {{/required}}
         {{/param_info}}
-        {{#isPost}}{{request_type}} requestBody, {{/isPost}}Helpers.HttpUtils util) throws IOException
+        {{#isPost}}{{{request_type}}} requestBody, {{/isPost}}Helpers.HttpUtils util) throws IOException
     {
         String path_unformatted = "{{path}}";
         HashMap map = new HashMap();
@@ -43,7 +46,7 @@ public class {{tag}}{
         String path = MapFormat.format(path_unformatted, map);
         JsonObject responseJson = util.{{endpoint_type}}BungieEndpoint(path);
         System.out.println(responseJson);
-        ResponseObject<{{return_type}}> response = new ResponseObject(responseJson);
+        ResponseObject<{{{return_type}}}> response = new ResponseObject(responseJson);
         if(!responseJson.get("ErrorCode").equals(200)){
             System.out.println("Error: "+responseJson.get("DetailedErrorTrace"));
         }
@@ -51,9 +54,9 @@ public class {{tag}}{
     }
     
     {{#has_query}}
-    public static ResponseObject<{{return_type}}> {{method_name}}(
-        {{#param_info}}{{param_type}}{{#isArray}}[]{{/isArray}} {{param_name}},
-        {{/param_info}}{{#isPost}}{{request_type}} requestBody, {{/isPost}}
+    public static ResponseObject<{{{return_type}}}> {{method_name}}(
+        {{#param_info}}{{{param_type}}}{{#isArray}}[]{{/isArray}} {{param_name}},
+        {{/param_info}}{{#isPost}}{{{request_type}}} requestBody, {{/isPost}}
         Helpers.HttpUtils util
     )throws IOException{
         String path_unformatted = "{{path}}";
@@ -67,7 +70,7 @@ public class {{tag}}{
         path += path_params;
         JsonObject responseJson = util.{{endpoint_type}}BungieEndpoint(path);
         System.out.println(responseJson);
-        ResponseObject<{{return_type}}> response = new ResponseObject(responseJson);
+        ResponseObject<{{{return_type}}}> response = new ResponseObject(responseJson);
         if(!responseJson.get("ErrorCode").equals(200)){
             System.out.println("Error: "+responseJson.get("DetailedErrorTrace"));
         }
