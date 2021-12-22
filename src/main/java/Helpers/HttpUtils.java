@@ -53,7 +53,7 @@ public class HttpUtils {
         return json;
     }
 
-    public JsonObject postBungieEndpoint(String endpoint, String requestBody) throws IOException {
+    public <T> JsonObject postBungieEndpoint(String endpoint, JsonObject requestBody) throws IOException {
         URL obj = new URL(endpoint);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
@@ -67,7 +67,7 @@ public class HttpUtils {
 
         con.setDoOutput(true);
 
-        HttpUtils.addRequestBody(con, requestBody);
+        HttpUtils.addRequestBody(con, requestBody.getAsString());
 
         String response = postRequest(con);
         JsonParser parser = new JsonParser();
