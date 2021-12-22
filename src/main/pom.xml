@@ -56,6 +56,11 @@
             <version>2.8.9</version>
             <type>jar</type>
         </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-openide-util</artifactId>
+            <version>RELEASE126</version>
+        </dependency>
     </dependencies>
 
     <build>
