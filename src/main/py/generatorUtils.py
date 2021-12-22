@@ -26,7 +26,9 @@ def get_type(param, enum_imports=[], model_imports=[]):
     if param_type:
         param_type = param_type[0]
         param_type = get_ref_name(param_type)
-        if 'x-enum-reference' or 'schema' in param:
+        if 'schema' in param:
+            enum_imports.append(param_type)
+        elif 'x-enum-reference' in param:
             enum_imports.append(param_type)
         else:
             model_imports.append(param_type)
@@ -34,15 +36,17 @@ def get_type(param, enum_imports=[], model_imports=[]):
         param_type = json_extract(param, 'format')
         if not param_type:
             param_type = json_extract(param, 'type')
-        param_type = param_type[0]
+        param_type = param_type[0] if param_type[0] != 'array' else param_type[1]
 
         # If property is not a model, convert it using dictionary
         if param_type in type_conversion_dict:
             param_type = type_conversion_dict[param_type]
+        if isArray:
+            param_type = param_type+"[]"
     if 'additionalProperties' in param:
         map_hash, mapof = get_as_map(param)
         param_type = "Map<%s, %s>" % (map_hash, mapof)
-    return param_type, isArray, enum_imports, model_imports
+    return param_type, enum_imports, model_imports
 
 
 def type_convert(t):
@@ -60,6 +64,8 @@ def json_extract(obj, key):
         if isinstance(obj, dict):
             for k, v in obj.items():
                 if isinstance(v, (dict, list)):
+                    if k == key:
+                        arr.append(v)
                     extract(v, arr, key)
                 elif k == key:
                     arr.append(v)
@@ -100,6 +106,13 @@ def get_schema_data():
     with open(apiFile, 'r', encoding='utf-8') as data_file:
         rawData = json.load(data_file)
     return rawData.get('components').get('schemas')
+
+def get_response_data():
+    # apiFile = './api-src/openapi.json'
+    apiFile = '../../../api-src/openapi.json'
+    with open(apiFile, 'r', encoding='utf-8') as data_file:
+        rawData = json.load(data_file)
+    return rawData.get('components').get('responses')
 
 
 def sortParams(params):

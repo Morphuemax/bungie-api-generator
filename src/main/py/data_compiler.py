@@ -1,4 +1,4 @@
-from py.generatorUtils import type_conversion_dict, get_ref_name, get_type, sortParams
+from py.generatorUtils import type_conversion_dict, get_ref_name, get_type, sortParams, json_extract
 
 
 def compile_enum_data(data):
@@ -57,12 +57,11 @@ def compile_model_data(data):
                 if model_properties is not None:
                     model_property = model_properties[k2]
                     property_name = get_ref_name(k2)
-                    property_type, isArray, enums, models = get_type(model_property, enums, models)
+                    property_type, enums, models = get_type(model_property, enums, models)
                 all_properties.append({
                     'property_type': property_type,
                     'property_name': property_name,
                     'Property_Name': property_name[0].upper() + property_name[1:],
-                    'isArray': isArray,
                     'isRequest': True if "Request" in class_name else False
                 })
                 # Each entry corresponds to a separate model
@@ -90,7 +89,7 @@ def compile_api_parameters(parameter_data):
         param_name = key['name']
         param_desc = key['description']
         # type = key['schema']['type']  # The data type of the parameter: str, int, lst, ...
-        param_type, isArray, enums, models = get_type(key, enums)
+        param_type, enums, models = get_type(key, enums)
         in_type = key['in']  # Is "in" a path parameter or query parameter
         isQuery = True if in_type == "query" else False  # Used for template formatting
 
@@ -100,7 +99,6 @@ def compile_api_parameters(parameter_data):
                            'param_desc': param_desc,
                            'param_type': param_type,
                            'in_type': in_type,
-                           'isArray': isArray,
                            'isQuery': isQuery,
                            'required': required
                            })
@@ -143,10 +141,7 @@ def compile_api_data(data):
             param_info.append(param_info_json)
 
         return_type = path_data[endpoint_type]['responses']['200']['$ref']
-        return_type = return_type.split("/")[-1].split(".")[-1]  # Get ref name
-
-        if type_conversion_dict.get(return_type) is not None:
-            return_type = type_conversion_dict.get(return_type)
+        return_type = get_ref_name(return_type)+"Response" # Get ref name
 
         request_type = path_data[endpoint_type].get('requestBody')
         request_type = request_type['content']['application/json']['schema'] if request_type is not None else ""
@@ -158,6 +153,10 @@ def compile_api_data(data):
             else:
                 request_type = request_type['items']['format']
                 request_type = type_conversion_dict.get(request_type)
+
+        # Some endpoints don't have a tag, we will lump them together in a 'Misc' file
+        if endpoint_tag == '':
+            endpoint_tag = 'Misc'
 
         method_info = {"method_name": method_name,
                        "endpoint_tag": endpoint_tag,
@@ -198,7 +197,26 @@ def compile_api_data(data):
                     all_methods[endpoint_tag]['imports']['models'].append(request_type)
         # Add model of the return type to imports
         # Check if model is already imported
-        if return_type not in all_methods[endpoint_tag]['imports']['models']:
+        if return_type not in all_methods[endpoint_tag]['imports']['responses']:
             if return_type not in type_conversion_dict.values():
                 all_methods[endpoint_tag]['imports']['responses'].append(return_type)
     return all_methods
+
+
+def compile_response_data(data):
+    all_responses = {}
+    for key in data:
+        models = []
+        response_name = get_ref_name(key)
+        response_json = data[key]
+        response = json_extract(data[key], 'Response')[0]
+        response_type, enums, models = get_type(response, model_imports=models)
+        entry = {
+            response_name: {
+                'models': models[0] if models else [],
+                'response_name': response_name+"Response",
+                'response_type': response_type
+            }
+        }
+        all_responses.update(entry)
+    return all_responses

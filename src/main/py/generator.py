@@ -4,8 +4,8 @@ import shutil
 import threading
 import chevron
 
-from py.data_compiler import compile_api_data, compile_model_data, compile_enum_data
-from py.generatorUtils import get_path_data, get_schema_data
+from py.data_compiler import compile_api_data, compile_model_data, compile_enum_data, compile_response_data
+from py.generatorUtils import get_path_data, get_schema_data, get_response_data
 
 
 def generate_enums():
@@ -76,6 +76,40 @@ def generate_models():
     "##################################################################"
 
 
+def generate_responses():
+    data = get_response_data()
+    compiled_response_data = compile_response_data(data)
+    path = '../../../generated-src/main/java/lib/responses/'
+
+    files = glob.glob(path + '*', recursive=True)
+    isExist = os.path.exists(path)
+
+    # We want to clear the 'models' folder, so we can generate a new one
+    if isExist:
+        try:
+            shutil.rmtree(path)
+        except OSError as e:
+            print("Error: %s : %s" % (path, e.strerror))
+    # Create empty directory
+    os.makedirs(path)
+    print("Cleared Response directory")
+    print("Generating Response")
+    # For each model we are making a separate file
+    for key in compiled_response_data:
+        template_path = "./templates/response-class.mustache"
+        isFile = os.path.isfile(template_path)
+        with open(template_path, 'r') as f:
+            # Render model-class.mustache with model data we collected
+            rendered = chevron.render(f, compiled_response_data[key])
+        api_file = open(path + key + "Response" + ".java", 'x')
+        api_file.write(rendered)
+        api_file.close()
+        # print(key + ".java created...")
+    print("!All Response files created!")
+
+    "##################################################################"
+
+
 def generate_api():
     data = get_path_data()
     compiled_api_data = compile_api_data(data)
@@ -100,9 +134,7 @@ def generate_api():
         with open(template_path, 'r') as f:
             # Render api.mustache with method data we collected
             rendered = chevron.render(f, compiled_api_data[key])
-        # Some endpoints don't have a tag, we will lump them together in a 'Misc' file
-        if key == '':
-            key = 'Misc'
+
         api_file = open(path + key + ".java", 'x')
         api_file.write(rendered)
         api_file.close()
@@ -144,7 +176,7 @@ def copy_helpers():
 
 
 def generate():
-    generator_list = [generate_enums, generate_models, generate_api, copy_helpers]
+    generator_list = [generate_enums, generate_models, generate_responses, generate_api, copy_helpers]
     print("Generating Sources:\n")
     try:
         for generator in generator_list:
