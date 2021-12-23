@@ -1,27 +1,54 @@
 package lib.enums;
 
+import com.google.gson.annotations.SerializedName;
+import java.util.EnumSet;
+
 
 public enum {{class_name}}{
-{{#values}}
-    /* {{#description}}{{.}}{{/description}} */
-    {{identifier}}(({{cast_type}}){{numericValue}}),
+    {{#values}}
+    /* {{description}} */
+    @SerializedName("{{numericValue}}")
+    {{identifier}}("{{identifier}}", ({{cast_type}}){{numericValue}}),
 
-{{/values}}
-// value not found fallback
-ProtectedInvalidEnumValue(({{cast_type}})999999999);
+    {{/values}};
 
-private {{enum_type}} enumValue;
+    private {{enum_type}} enumValue;
+    private String enumName;
 
-private {{class_name}}({{enum_type}} bungieEnumValue) {
-this.enumValue = bungieEnumValue;
-}
+	private {{class_name}}(String bungieEnumName, {{enum_type}} bungieEnumValue) {
+        this.enumName = bungeiEnumName;
+		this.enumValue = bungieEnumValue;
+	}
 
-@Override
-public String toString(){
-return enumValue + "";
+    @Override
+    public String toString(){
+        return enumName;
     }
 
     public {{enum_type}} getTypeDefinition() {
 	    return enumValue;
     }
+
+    {{#is_bitmask}}
+    public static EnumSet<{{class_name}}> fromType({{enum_type}} enumId) {
+        EnumSet<{{class_name}}> codesList = EnumSet.noneOf({{class_name}}.class);
+        for ({{class_name}} code : values()) {
+            if ((codeId & code.intValue()) != 0) {
+                codesList.add(code);
+            }
+        }
+        return codesList;
+    }
+
+    public static {{enum_type}} toType(EnumSet<{{class_name}}> enumList) {
+        if (codesList == null || codesList.isEmpty()) {
+            throw new IllegalArgumentException("Null or empty EnumSet<{{class_name}}>");
+        }
+        int returnValue = 0;
+        for ({{class_name}} code : codesList) {
+            returnValue |= code.intValue();
+        }
+        return returnValue;
+    }
+    {{/is_bitmask}}
 }

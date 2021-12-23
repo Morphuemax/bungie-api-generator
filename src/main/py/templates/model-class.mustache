@@ -2,8 +2,10 @@ package lib.models;
 
 import java.util.Map;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import Helpers.ResponseObject;
+import java.util.EnumSet;
 {{#imports}}
 {{#enums}}
 import lib.enums.{{.}};
@@ -16,13 +18,14 @@ import lib.models.{{.}};
 public class {{class_name}}{
 
     {{#properties}}
-    {{{property_type}}} {{property_name}};
+    {{#is_bitmask}}{{{raw_type}}}{{/is_bitmask}}{{^is_bitmask}}{{{property_type}}}{{/is_bitmask}} {{property_name}}; {{#is_bitmask}}EnumSet<{{property_type}}>{{property_name}}Set;{{/is_bitmask}}
     {{/properties}}
     JsonElement json;
 
     public {{class_name}}(JsonElement jsonElement){
         json = jsonElement;
-        Gson gson = new Gson();
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        Gson gson = gsonBuilder.create();
         {{class_name}} temp = gson.fromJson(jsonElement, {{class_name}}.class);
         {{#properties}}
         this.{{property_name}} = temp.get{{Property_Name}}();
@@ -32,7 +35,7 @@ public class {{class_name}}{
     }
 
     {{#properties}}
-    public {{{property_type}}} get{{Property_Name}}(){
+    public {{#is_bitmask}}{{{raw_type}}}{{/is_bitmask}}{{^is_bitmask}}{{{property_type}}}{{/is_bitmask}} get{{Property_Name}}(){
         return {{property_name}};
     }
     {{#isRequest}}

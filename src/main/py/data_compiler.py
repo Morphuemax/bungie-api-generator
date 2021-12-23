@@ -1,4 +1,4 @@
-from generatorUtils import type_conversion_dict, get_ref_name, get_type, sortParams, json_extract, castConvert
+from py.generatorUtils import type_conversion_dict, get_ref_name, get_type, sortParams, json_extract, cast_convert
 
 
 def compile_enum_data(data):
@@ -8,7 +8,7 @@ def compile_enum_data(data):
         if data[k].get('enum') is not None:  # Confirm that JSON has 'enum' key
             isEnum = True
         if isEnum:
-            class_name = k.split('.')[-1]  # Keys are formatted {Tag}.{Name}
+            class_name = k.split('.')[-1]  # Keys are formated {Tag}.{Name}
             values = []
             enum_type = data[k].get('format')
             if enum_type in type_conversion_dict:
@@ -22,10 +22,14 @@ def compile_enum_data(data):
                                'identifier': identifier,
                                'description': description
                                })
+            is_bitmask = json_extract(data[k], 'x-enum-is-bitmask')
+            if is_bitmask:
+                is_bitmask=is_bitmask[0];
 
             enum = {'class_name': class_name,
                     'enum_type': enum_type,
-                    'cast_type': castConvert(enum_type),
+                    'cast_type': cast_convert(enum_type),
+                    'is_bitmask': is_bitmask,
                     'values': values
                     }
             # Name:{
@@ -55,30 +59,36 @@ def compile_model_data(data):
             if model_properties is None:
                 model_properties = {k: data[k]}
             for k2 in model_properties:
+                is_bitmask=False
                 if model_properties is not None:
-                    if class_name == 'DestinyMilestone':
-                        d = 4
                     model_property = model_properties[k2]
                     property_name = get_ref_name(k2)
-                    property_type, enums, models = get_type(model_property, enums, models)
+                    if class_name == 'DestinyProfileComponent':
+                        d = 4
+                    property_type, raw_type, enums, models = get_type(model_property, enums, models)
+                    is_bitmask = json_extract(model_properties[k2], 'x-enum-is-bitmask')
+                if is_bitmask:
+                    is_bitmask = is_bitmask[0]
                 all_properties.append({
                     'property_type': property_type,
+                    'raw_type': raw_type,
                     'property_name': property_name,
                     'Property_Name': property_name[0].upper() + property_name[1:],
+                    'is_bitmask': is_bitmask,
                     'isRequest': True if "Request" in class_name else False
                 })
-            # Each entry corresponds to a separate model
-            entry = {
-                class_name: {
-                    'imports': {
-                        'enums': enums,
-                        'models': models
-                    },
-                    'properties': all_properties,
-                    'class_name': class_name
+                # Each entry corresponds to a separate model
+                entry = {
+                    class_name: {
+                        'imports': {
+                            'enums': enums,
+                            'models': models
+                        },
+                        'properties': all_properties,
+                        'class_name': class_name
+                    }
                 }
-            }
-            all_models.update(entry)
+                all_models.update(entry)
     return all_models
 
     "############################################################"
@@ -92,7 +102,7 @@ def compile_api_parameters(parameter_data):
         param_name = key['name']
         param_desc = key['description']
         # type = key['schema']['type']  # The data type of the parameter: str, int, lst, ...
-        param_type, enums, models = get_type(key, enums)
+        param_type, raw_type, enums, models = get_type(key, enums)
         in_type = key['in']  # Is "in" a path parameter or query parameter
         isQuery = True if in_type == "query" else False  # Used for template formatting
 
@@ -171,7 +181,7 @@ def compile_api_data(data):
                        'request_type': request_type,
                        'return_type': return_type,
                        'has_query': has_query,
-                       'has_request_body': 'requestBody' in path_data
+                       'has_request': True if json_extract(data[path],'requestBody') else False
                        }
 
         if endpoint_tag not in all_methods:
@@ -212,13 +222,13 @@ def compile_response_data(data):
     for key in data:
         models = []
         response_name = get_ref_name(key)
-
+        response_json = data[key]
         response = json_extract(data[key], 'Response')[0]
-        response_type, enums, models = get_type(response, model_imports=models)
+        response_type, raw_type, enums, models = get_type(response, model_imports=models)
         entry = {
             response_name: {
                 'models': models[0] if models else [],
-                'response_name': response_name + "Response",
+                'response_name': response_name+"Response",
                 'response_type': response_type
             }
         }

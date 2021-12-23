@@ -1,14 +1,5 @@
 import json
 
-cast_conversion_dict = {
-    "Boolean": "boolean",
-    "Byte": "byte",
-    "Short": "short",
-    "Integer": "int",
-    "Long": "long",
-    "Double": "double"
-}
-
 type_conversion_dict = {
     "boolean": "Boolean",
     "byte": "Byte",
@@ -24,57 +15,83 @@ type_conversion_dict = {
     "": "String"
 }
 
+cast_conversion_dict = {
+    "Boolean": "boolean",
+    "Byte": "byte",
+    "Short": "short",
+    "Integer": "int",
+    "Long": "long",
+    "Double": "double",
+    "Float": "float"
+}
+
 
 def get_ref_name(ref):
-    return ref.split("/")[-1].split(".")[-1]
+    if ref:
+        return ref.split("/")[-1].split(".")[-1]
+
+
+def get_basic_type(data):
+    param_type = None
+    param_type = json_extract(data, 'format')
+    if not param_type:
+        param_type = json_extract(data, 'type')
+    if param_type:
+        param_type = param_type[0] if (param_type[0] != 'array' or len(param_type) < 2) else param_type[1]
+        # If property is not a model, convert it using dictionary
+        if param_type in type_conversion_dict:
+            param_type = type_conversion_dict[param_type]
+        return param_type
+    return None
 
 
 def get_type(param, enum_imports=[], model_imports=[]):
     isArray = True if param.get('type') == "array" else False
     # Check if property is an enum
     param_type = json_extract(param, '$ref')
+    raw_type = None
     if param_type:
         param_type = param_type[0]
         param_type = get_ref_name(param_type)
         if 'schema' in param:
-            if param_type not in enum_imports:
-                enum_imports.append(param_type)
+            enum_imports.append(param_type)
         else:
-            has_enum = json_extract(param, 'x-enum-reference')
-            if has_enum:
-                inner_enum = get_ref_name(has_enum[0].get('$ref'))
-                if inner_enum == param_type:
+            # Fixes issue where enums are included as models
+            inner_enum = json_extract(param, 'x-enum-reference')
+            if inner_enum:
+                inner_enum = get_ref_name(inner_enum[0].get('$ref'))
+                if param_type == inner_enum:
                     if param_type not in enum_imports:
                         enum_imports.append(param_type)
             else:
-                if param_type not in model_imports:
+                mapped_def = json_extract(param, 'x-mapped-definition')
+                if mapped_def:
+                    mapped_def = get_ref_name(mapped_def[0].get('$ref'))
+                    if param_type != mapped_def:
+                        if param_type not in model_imports:
+                            model_imports.append(param_type)
+                elif param_type not in model_imports:
                     model_imports.append(param_type)
+            raw_type = get_basic_type(param)
     else:
-        param_type = json_extract(param, 'format')
-        if not param_type:
-            param_type = json_extract(param, 'type')
-        param_type = param_type[0] if param_type[0] != 'array' else param_type[1]
-
-        # If property is not a model, convert it using dictionary
-        if param_type in type_conversion_dict:
-            param_type = type_conversion_dict[param_type]
-        if isArray:
-            param_type = param_type + "[]"
+        param_type = get_basic_type(param)
+    if isArray:
+        param_type = param_type+"[]"
     if 'additionalProperties' in param:
         map_hash, mapof = get_as_map(param)
         param_type = "Map<%s, %s>" % (map_hash, mapof)
-    return param_type, enum_imports, model_imports
-
-
-def castConvert(t):
-    if t in cast_conversion_dict:
-        t = cast_conversion_dict[t]
-    return t
+    return param_type, raw_type, enum_imports, model_imports
 
 
 def type_convert(t):
     if t in type_conversion_dict:
         t = type_conversion_dict[t]
+    return t
+
+
+def cast_convert(t):
+    if t in cast_conversion_dict:
+        t = cast_conversion_dict[t]
     return t
 
 
@@ -113,11 +130,13 @@ def get_as_map(json):
             is_array = True
             map_of = json_extract(json.get('additionalProperties'), '$ref')
             map_of = get_ref_name(map_of[0]) if map_of else None
+    map_of = get_ref_name(map_of)
     map_hash = json.get('x-dictionary-key')
     map_hash = map_hash.get('format') if map_hash.get('format') is not None else map_hash.get('type')
     map_hash = type_convert(map_hash)
     map_of = type_convert(map_of)
-    map_of = map_of + '[]' if is_array else map_of
+    if is_array:
+        map_of = map_of+'[]'
     return map_hash, map_of
 
 
