@@ -1,4 +1,4 @@
-from py.generatorUtils import type_conversion_dict, get_ref_name, get_type, sortParams, json_extract
+from generatorUtils import type_conversion_dict, get_ref_name, get_type, sortParams, json_extract, castConvert
 
 
 def compile_enum_data(data):
@@ -8,7 +8,7 @@ def compile_enum_data(data):
         if data[k].get('enum') is not None:  # Confirm that JSON has 'enum' key
             isEnum = True
         if isEnum:
-            class_name = k.split('.')[-1]  # Keys are formated {Tag}.{Name}
+            class_name = k.split('.')[-1]  # Keys are formatted {Tag}.{Name}
             values = []
             enum_type = data[k].get('format')
             if enum_type in type_conversion_dict:
@@ -25,6 +25,7 @@ def compile_enum_data(data):
 
             enum = {'class_name': class_name,
                     'enum_type': enum_type,
+                    'cast_type': castConvert(enum_type),
                     'values': values
                     }
             # Name:{
@@ -55,6 +56,8 @@ def compile_model_data(data):
                 model_properties = {k: data[k]}
             for k2 in model_properties:
                 if model_properties is not None:
+                    if class_name == 'DestinyMilestone':
+                        d = 4
                     model_property = model_properties[k2]
                     property_name = get_ref_name(k2)
                     property_type, enums, models = get_type(model_property, enums, models)
@@ -64,18 +67,18 @@ def compile_model_data(data):
                     'Property_Name': property_name[0].upper() + property_name[1:],
                     'isRequest': True if "Request" in class_name else False
                 })
-                # Each entry corresponds to a separate model
-                entry = {
-                    class_name: {
-                        'imports': {
-                            'enums': enums,
-                            'models': models
-                        },
-                        'properties': all_properties,
-                        'class_name': class_name
-                    }
+            # Each entry corresponds to a separate model
+            entry = {
+                class_name: {
+                    'imports': {
+                        'enums': enums,
+                        'models': models
+                    },
+                    'properties': all_properties,
+                    'class_name': class_name
                 }
-                all_models.update(entry)
+            }
+            all_models.update(entry)
     return all_models
 
     "############################################################"
@@ -167,7 +170,8 @@ def compile_api_data(data):
                        'param_info': param_info,
                        'request_type': request_type,
                        'return_type': return_type,
-                       'has_query': has_query
+                       'has_query': has_query,
+                       'has_request_body': 'requestBody' in path_data
                        }
 
         if endpoint_tag not in all_methods:
@@ -208,13 +212,13 @@ def compile_response_data(data):
     for key in data:
         models = []
         response_name = get_ref_name(key)
-        response_json = data[key]
+
         response = json_extract(data[key], 'Response')[0]
         response_type, enums, models = get_type(response, model_imports=models)
         entry = {
             response_name: {
                 'models': models[0] if models else [],
-                'response_name': response_name+"Response",
+                'response_name': response_name + "Response",
                 'response_type': response_type
             }
         }

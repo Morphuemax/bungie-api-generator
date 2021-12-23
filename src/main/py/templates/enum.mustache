@@ -2,23 +2,23 @@ package lib.enums;
 
 
 public enum {{class_name}}{
-    {{#values}}
-    // {{description}}
-    {{identifier}}({{numericValue}}),
+{{#values}}
+    /* {{#description}}{{.}}{{/description}} */
+    {{identifier}}(({{cast_type}}){{numericValue}}),
 
-    {{/values}}
-    // value not found fallback
-    ProtectedInvalidEnumValue(999999999);
+{{/values}}
+// value not found fallback
+ProtectedInvalidEnumValue(({{cast_type}})999999999);
 
-    private {{enum_type}} enumValue;
+private {{enum_type}} enumValue;
 
-	private {{class_name}}({{enum_type}} bungieEnumValue) {
-		this.enumValue = bungieEnumValue;
-	}
+private {{class_name}}({{enum_type}} bungieEnumValue) {
+this.enumValue = bungieEnumValue;
+}
 
-    @Override
-    public String toString(){
-        return enumValue + "";
+@Override
+public String toString(){
+return enumValue + "";
     }
 
     public {{enum_type}} getTypeDefinition() {

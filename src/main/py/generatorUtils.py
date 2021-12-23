@@ -1,5 +1,14 @@
 import json
 
+cast_conversion_dict = {
+    "Boolean": "boolean",
+    "Byte": "byte",
+    "Short": "short",
+    "Integer": "int",
+    "Long": "long",
+    "Double": "double"
+}
+
 type_conversion_dict = {
     "boolean": "Boolean",
     "byte": "Byte",
@@ -8,6 +17,7 @@ type_conversion_dict = {
     "uint32": "Long",
     "int64": "Long",
     "double": "Double",
+    "float": "Float",
     "string": "String",
     "date-time": "String",
     "object": "Object",
@@ -27,11 +37,18 @@ def get_type(param, enum_imports=[], model_imports=[]):
         param_type = param_type[0]
         param_type = get_ref_name(param_type)
         if 'schema' in param:
-            enum_imports.append(param_type)
-        elif 'x-enum-reference' in param:
-            enum_imports.append(param_type)
+            if param_type not in enum_imports:
+                enum_imports.append(param_type)
         else:
-            model_imports.append(param_type)
+            has_enum = json_extract(param, 'x-enum-reference')
+            if has_enum:
+                inner_enum = get_ref_name(has_enum[0].get('$ref'))
+                if inner_enum == param_type:
+                    if param_type not in enum_imports:
+                        enum_imports.append(param_type)
+            else:
+                if param_type not in model_imports:
+                    model_imports.append(param_type)
     else:
         param_type = json_extract(param, 'format')
         if not param_type:
@@ -42,11 +59,17 @@ def get_type(param, enum_imports=[], model_imports=[]):
         if param_type in type_conversion_dict:
             param_type = type_conversion_dict[param_type]
         if isArray:
-            param_type = param_type+"[]"
+            param_type = param_type + "[]"
     if 'additionalProperties' in param:
         map_hash, mapof = get_as_map(param)
         param_type = "Map<%s, %s>" % (map_hash, mapof)
     return param_type, enum_imports, model_imports
+
+
+def castConvert(t):
+    if t in cast_conversion_dict:
+        t = cast_conversion_dict[t]
+    return t
 
 
 def type_convert(t):
@@ -80,15 +103,21 @@ def json_extract(obj, key):
 
 def get_as_map(json):
     map_of = json.get('additionalProperties').get('$ref')
+    is_array = False
     if map_of is not None:
         map_of = get_ref_name(map_of)
     else:
         map_of = json.get('additionalProperties')
         map_of = map_of.get('format') if map_of.get('format') is not None else map_of.get('type')
+        if map_of == 'array':
+            is_array = True
+            map_of = json_extract(json.get('additionalProperties'), '$ref')
+            map_of = get_ref_name(map_of[0]) if map_of else None
     map_hash = json.get('x-dictionary-key')
     map_hash = map_hash.get('format') if map_hash.get('format') is not None else map_hash.get('type')
     map_hash = type_convert(map_hash)
     map_of = type_convert(map_of)
+    map_of = map_of + '[]' if is_array else map_of
     return map_hash, map_of
 
 
