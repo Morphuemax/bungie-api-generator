@@ -18,8 +18,8 @@ JsonElement json;
 
 public {{response_name}}(JsonElement jsonElement){
 Gson gson = new Gson();
-        {{response_name}} temp = gson.fromJson(jsonElement, {{response_name}}.class);
-        this.Response = temp.getResponse();
+{{response_name}} temp = gson.fromJson(jsonElement, {{response_name}}.class);
+this.Response = temp.getResponse();
 this.ErrorCode = temp.getErrorCode();
 this.ThrottleSeconds = temp.getThrottleSeconds();
 this.ErrorStatus = temp.getErrorStatus();
@@ -30,9 +30,7 @@ temp = null;
 json = jsonElement;
 }
 
-public {{{response_type}}} getResponse(){
-return Response;
-}
+public {{{response_type}}} getResponse(){ return Response; }
 public int getErrorCode(){ return ErrorCode;}
 public int getThrottleSeconds() { return ThrottleSeconds; }
 public String getErrorStatus() { return ErrorStatus; }
