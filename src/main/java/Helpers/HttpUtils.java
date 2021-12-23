@@ -36,8 +36,9 @@ public class HttpUtils {
     }
 
     public JsonObject getBungieEndpoint(String endpoint) throws IOException {
-        URL obj = new URL(endpoint);
+        URL obj = new URL(HOST + endpoint);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        con.setRequestMethod("GET");
         // Set header
         con.setRequestProperty("X-API-KEY", apiKey);
 
@@ -45,7 +46,7 @@ public class HttpUtils {
         System.out.println("\nSending 'GET' request to Bungie.Net : " + con.getURL().toString());
         System.out.println("Response Code : " + responseCode);
 
-        String response = getRequest(con);
+        String response = sendRequest(con);
 
         JsonParser parser = new JsonParser();
         JsonObject json = (JsonObject) parser.parse(response);
@@ -53,9 +54,10 @@ public class HttpUtils {
         return json;
     }
 
-    public <T> JsonObject postBungieEndpoint(String endpoint, JsonObject requestBody) throws IOException {
-        URL obj = new URL(endpoint);
+    public JsonObject postBungieEndpoint(String endpoint, JsonObject requestBody) throws IOException {
+        URL obj = new URL(HOST + endpoint);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        con.setRequestMethod("POST");
 
         con.setRequestProperty("X-API-KEY", apiKey);
         con.setRequestProperty("Content-Type", "application/json");
@@ -69,7 +71,29 @@ public class HttpUtils {
 
         HttpUtils.addRequestBody(con, requestBody.getAsString());
 
-        String response = postRequest(con);
+        String response = sendRequest(con);
+        JsonParser parser = new JsonParser();
+        JsonObject json = (JsonObject) parser.parse(response);
+
+        return json;
+    }
+
+    public JsonObject postBungieEndpoint(String endpoint) throws IOException {
+        URL obj = new URL(HOST + endpoint);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        con.setRequestMethod("POST");
+
+        con.setRequestProperty("X-API-KEY", apiKey);
+        con.setRequestProperty("Content-Type", "application/json");
+        try {
+            con.setRequestProperty("Authorization", "Bearer " + oAuth.getAccessToken());
+        } catch (Exception e) {
+            System.out.println("Helpers.OAuth Access Token not available.  Helpers.OAuth may not have been initialized.");
+        }
+
+        con.setDoOutput(true);
+
+        String response = sendRequest(con);
         JsonParser parser = new JsonParser();
         JsonObject json = (JsonObject) parser.parse(response);
 

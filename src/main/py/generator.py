@@ -4,8 +4,8 @@ import shutil
 import threading
 import chevron
 
-from py.data_compiler import compile_api_data, compile_model_data, compile_enum_data, compile_response_data
-from py.generatorUtils import get_path_data, get_schema_data, get_response_data
+from data_compiler import compile_api_data, compile_model_data, compile_enum_data, compile_response_data
+from generatorUtils import get_path_data, get_schema_data, get_response_data
 
 
 def generate_enums():

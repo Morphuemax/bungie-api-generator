@@ -1,5 +1,6 @@
 package lib.api;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import java.util.HashMap;
 import org.openide.util.MapFormat;
@@ -23,56 +24,55 @@ public class {{tag}}{
     /**
     / {{method_desc}}
     {{#param_info}}
-    / @param {{param_name}}:{{{param_type}}} {{param_desc}}
+        / @param {{param_name}}:{{{param_type}}} {{param_desc}}
     {{/param_info}}
     /
     / <a href="https://bungie-net.github.io/#{{endpoint_tag}}.{{method_name}}">{{endpoint_tag}}.{{method_name}}</a>
     */
 
     public static {{{return_type}}} {{method_name}}(
-        {{#param_info}}
+    {{#param_info}}
         {{#required}}{{{param_type}}} {{param_name}}, {{/required}}
-        {{/param_info}}
-        {{#isPost}}{{{request_type}}} requestBody, {{/isPost}}HttpUtils util) throws IOException
+    {{/param_info}}
+    {{#has_request_body}}{{{request_type}}} requestBody, {{/has_request_body}}HttpUtils util) throws IOException
     {
-        String path_unformatted = "{{path}}";
-        HashMap map = new HashMap();
-        {{#param_info}}{{#required}}
-            map.put("{{param_name}}", {{param_name}});
-        {{/required}}{{/param_info}}
-        String path = MapFormat.format(path_unformatted, map);
-        JsonObject responseJson = util.{{endpoint_type}}BungieEndpoint(path{{#isPost}}, (JsonObject) requestBody.getAsJson(){{/isPost}});
-        System.out.println(responseJson);
-        {{{return_type}}} response = new {{{return_type}}}(responseJson);
-        if(!responseJson.get("ErrorCode").equals(200)){
-            System.out.println("Error: "+responseJson.get("DetailedErrorTrace"));
-        }
-        return response;
+    String path_unformatted = "{{path}}";
+    String path = path_unformatted{{#param_info}}{{#required}}
+        .replace("{{=<%%>=}}{<%={{}}}=%>{{param_name}}{{=<%%>=}}}<%={{}}}=%>", {{param_name}}.toString()
+    {{/required}}{{/param_info}};
+    {{#has_request}}Gson gson = new Gson();{{/has_request}}
+    JsonObject responseJson = util.{{endpoint_type}}BungieEndpoint(path{{#has_request_body}}, (JsonObject) gson.toJsonTree(requestBody){{/has_request_body}});
+    System.out.println(responseJson);
+    {{{return_type}}} response = new {{{return_type}}}(responseJson);
+    if(!responseJson.get("ErrorCode").equals(200)){
+    System.out.println("Error: "+responseJson.get("DetailedErrorTrace"));
     }
-    
+    return response;
+    }
+
     {{#has_query}}
-    public static {{{return_type}}} {{method_name}}(
+        public static {{{return_type}}} {{method_name}}(
         {{#param_info}}{{{param_type}}} {{param_name}},
-        {{/param_info}}{{#isPost}}{{{request_type}}} requestBody, {{/isPost}}
+        {{/param_info}}{{#has_request_body}}{{{request_type}}} requestBody, {{/has_request_body}}
         HttpUtils util
-    )throws IOException{
+        )throws IOException{
         String path_unformatted = "{{path}}";
         HashMap map = new HashMap();
-        {{#param_info}}{{#required}}
-            map.put("{{param_name}}", {{param_name}});
-        {{/required}}{{/param_info}}
-        String path = MapFormat.format(path_unformatted, map);
+        String path = path_unformatted{{#param_info}}{{#required}}
+            .replace("{{=<%%>=}}{<%={{}}}=%>{{param_name}}{{=<%%>=}}}<%={{}}}=%>", {{param_name}}.toString()
+        {{/required}}{{/param_info}};
         String path_params = "?";
         path_params += {{#param_info}}{{^required}}"{{param_name}}="+{{param_name}}{{^last}}+"&"+{{/last}}{{/required}}{{/param_info}};
         path += path_params;
-        JsonObject responseJson = util.{{endpoint_type}}BungieEndpoint(path{{#isPost}}, (JsonObject) requestBody.getAsJson(){{/isPost}});
+        {{#has_request}}Gson gson = new Gson();{{/has_request}}
+        JsonObject responseJson = util.{{endpoint_type}}BungieEndpoint(path{{#has_request_body}}, (JsonObject) gson.toJsonTree(requestBody){{/has_request_body}});
         System.out.println(responseJson);
         {{{return_type}}} response = new {{{return_type}}}(responseJson);
         if(!responseJson.get("ErrorCode").equals(200)){
-            System.out.println("Error: "+responseJson.get("DetailedErrorTrace"));
+        System.out.println("Error: "+responseJson.get("DetailedErrorTrace"));
         }
         return response;
-    }
+        }
     {{/has_query}}
 {{/methods}}
 }
