@@ -53,7 +53,7 @@ public class HttpUtils {
         return json;
     }
 
-    public <T> JsonObject postBungieEndpoint(String endpoint, JsonObject requestBody) throws IOException {
+    public JsonObject postBungieEndpoint(String endpoint, JsonObject requestBody) throws IOException {
         URL obj = new URL(endpoint);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
@@ -68,6 +68,27 @@ public class HttpUtils {
         con.setDoOutput(true);
 
         HttpUtils.addRequestBody(con, requestBody.getAsString());
+
+        String response = postRequest(con);
+        JsonParser parser = new JsonParser();
+        JsonObject json = (JsonObject) parser.parse(response);
+
+        return json;
+    }
+
+    public JsonObject postBungieEndpoint(String endpoint) throws IOException {
+        URL obj = new URL(endpoint);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+        con.setRequestProperty("X-API-KEY", apiKey);
+        con.setRequestProperty("Content-Type", "application/json");
+        try {
+            con.setRequestProperty("Authorization", "Bearer " + oAuth.getAccessToken());
+        } catch (Exception e) {
+            System.out.println("Helpers.OAuth Access Token not available.  Helpers.OAuth may not have been initialized.");
+        }
+
+        con.setDoOutput(true);
 
         String response = postRequest(con);
         JsonParser parser = new JsonParser();
