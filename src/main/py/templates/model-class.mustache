@@ -18,7 +18,7 @@ import lib.models.{{.}};
 public class {{class_name}}{
 
     {{#properties}}
-    {{#is_bitmask}}{{{raw_type}}}{{/is_bitmask}}{{^is_bitmask}}{{{property_type}}}{{/is_bitmask}} {{property_name}}; {{#is_bitmask}}EnumSet<{{property_type}}>{{property_name}}Set;{{/is_bitmask}}
+    {{#is_bitmask}}{{{raw_type}}}{{/is_bitmask}}{{^is_bitmask}}{{{property_type}}}{{/is_bitmask}} {{property_name}}; // {{#is_bitmask}}EnumSet<{{property_type}}>{{property_name}}Set;{{/is_bitmask}}
     {{/properties}}
     JsonElement json;
 

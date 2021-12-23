@@ -16,16 +16,16 @@ public enum {{class_name}}{
     private String enumName;
 
 	private {{class_name}}(String bungieEnumName, {{enum_type}} bungieEnumValue) {
-        this.enumName = bungeiEnumName;
-		this.enumValue = bungieEnumValue;
-	}
+this.enumName = bungieEnumName;
+this.enumValue = bungieEnumValue;
+}
 
-    @Override
-    public String toString(){
-        return enumName;
-    }
+@Override
+public String toString(){
+return enumName;
+}
 
-    public {{enum_type}} getTypeDefinition() {
+public {{enum_type}} getTypeDefinition() {
 	    return enumValue;
     }
 
@@ -33,22 +33,22 @@ public enum {{class_name}}{
     public static EnumSet<{{class_name}}> fromType({{enum_type}} enumId) {
         EnumSet<{{class_name}}> codesList = EnumSet.noneOf({{class_name}}.class);
         for ({{class_name}} code : values()) {
-            if ((codeId & code.intValue()) != 0) {
-                codesList.add(code);
-            }
-        }
-        return codesList;
+    if ((enumId & code.getTypeDefinition()) != 0) {
+    codesList.add(code);
+    }
+    }
+    return codesList;
     }
 
     public static {{enum_type}} toType(EnumSet<{{class_name}}> enumList) {
-        if (codesList == null || codesList.isEmpty()) {
-            throw new IllegalArgumentException("Null or empty EnumSet<{{class_name}}>");
-        }
-        int returnValue = 0;
-        for ({{class_name}} code : codesList) {
-            returnValue |= code.intValue();
-        }
-        return returnValue;
+    if (enumList == null || enumList.isEmpty()) {
+    throw new IllegalArgumentException("Null or empty EnumSet<{{class_name}}>");
+    }
+    {{cast_type}} returnValue = 0;
+    for ({{class_name}} code : enumList) {
+    returnValue |= code.getTypeDefinition();
+    }
+    return returnValue;
     }
     {{/is_bitmask}}
 }

@@ -1,4 +1,4 @@
-from py.generatorUtils import type_conversion_dict, get_ref_name, get_type, sortParams, json_extract, cast_convert
+from generatorUtils import type_conversion_dict, get_ref_name, get_type, sortParams, json_extract, cast_convert
 
 
 def compile_enum_data(data):
@@ -70,8 +70,8 @@ def compile_model_data(data):
                 if is_bitmask:
                     is_bitmask = is_bitmask[0]
                 all_properties.append({
-                    'property_type': property_type,
-                    'raw_type': raw_type,
+                    'property_type': property_type if not is_bitmask else property_type.split('[]')[0],
+                    'raw_type': raw_type if raw_type is not None else property_type,
                     'property_name': property_name,
                     'Property_Name': property_name[0].upper() + property_name[1:],
                     'is_bitmask': is_bitmask,

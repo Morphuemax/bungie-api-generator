@@ -70,6 +70,8 @@ def get_type(param, enum_imports=[], model_imports=[]):
                     if param_type != mapped_def:
                         if param_type not in model_imports:
                             model_imports.append(param_type)
+                    else:
+                        param_type = get_basic_type(param)
                 elif param_type not in model_imports:
                     model_imports.append(param_type)
             raw_type = get_basic_type(param)
