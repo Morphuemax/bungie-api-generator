@@ -1,14 +1,47 @@
-from generatorUtils import type_conversion_dict, get_ref_name, get_type, sortParams, json_extract, cast_convert
+from generatorUtils import type_conversion_dict, get_ref_name, get_type, sortParams, json_extract, cast_convert, \
+    get_path_data, get_response_data, get_schema_data
+
+all_enums = {}
+all_models = {}
+all_responses = {}
+all_methods = {}  # Creating a dict of dicts to split files by Tag
+
+
+def get_enums():
+    return all_enums
+
+
+def get_models():
+    return all_models #
+
+
+def get_responses():
+    return all_responses
+
+
+def get_methods():
+    return all_methods #
+
+
+def compile_resources():
+    global all_enums, all_models, all_responses, all_methods
+    compile_enum_data(get_schema_data())
+    compile_model_data(get_schema_data())
+    compile_response_data(get_response_data())
+    compile_api_data(get_path_data())
 
 
 def compile_enum_data(data):
-    all_enums = {}  # Create empty dict which we will fill and return
+    # Create empty dict which we will fill and return
+    #data = json_extract(data, 'enum')
     for k in data:
         isEnum = False  # Assume it's not an enum until known
+        temp = data[k]
         if data[k].get('enum') is not None:  # Confirm that JSON has 'enum' key
             isEnum = True
         if isEnum:
             class_name = k.split('.')[-1]  # Keys are formated {Tag}.{Name}
+            class_name = class_name[0].upper() + class_name[1:]
             values = []
             enum_type = data[k].get('format')
             if enum_type in type_conversion_dict:
@@ -37,14 +70,15 @@ def compile_enum_data(data):
             #     'values': [...]
             # }
             entry = {class_name: enum}
-            all_enums.update(entry)
+            if class_name not in all_enums:
+                all_enums.update(entry)
     return all_enums
 
     "############################################################"
 
 
 def compile_model_data(data):
-    all_models = {}
+
     for k in data:
         enums = []
         models = []
@@ -63,9 +97,16 @@ def compile_model_data(data):
                 if model_properties is not None:
                     model_property = model_properties[k2]
                     property_name = get_ref_name(k2)
-                    if class_name == 'DestinyProfileComponent':
+
+                    if class_name == 'DestinyProfileUserInfoCard':
                         d = 4
                     property_type, raw_type, enums, models = get_type(model_property, enums, models)
+                    if model_property.get('enum'):
+                        property_type = property_name[0].upper() + property_name[1:]
+                        compile_enum_data({property_name: model_property})
+                        if property_type not in enums:
+                            enums.append(property_type)
+
                     is_bitmask = json_extract(model_properties[k2], 'x-enum-is-bitmask')
                 if is_bitmask:
                     is_bitmask = is_bitmask[0]
@@ -88,7 +129,8 @@ def compile_model_data(data):
                         'class_name': class_name
                     }
                 }
-                all_models.update(entry)
+                if class_name not in all_models:
+                    all_models.update(entry)
     return all_models
 
     "############################################################"
@@ -123,7 +165,7 @@ def compile_api_parameters(parameter_data):
 
 
 def compile_api_data(data):
-    all_methods = {}  # Creating a dict of dicts to split files by Tag
+
     for path in data:
         path_data = data[path]
         method_name = path_data['summary'].split('.')[1]  # Summary/Endpoint is formatted {Tag}.{Name}
@@ -197,6 +239,7 @@ def compile_api_data(data):
                 }
             }
             all_methods.update(entry)
+
         all_methods[endpoint_tag]['methods'].append(method_info)
         # Grab/Add enums needed for parameters to imports
         for import_ref in import_data:
@@ -218,11 +261,10 @@ def compile_api_data(data):
 
 
 def compile_response_data(data):
-    all_responses = {}
+
     for key in data:
         models = []
         response_name = get_ref_name(key)
-        response_json = data[key]
         response = json_extract(data[key], 'Response')[0]
         response_type, raw_type, enums, models = get_type(response, model_imports=models)
         entry = {
@@ -232,5 +274,6 @@ def compile_response_data(data):
                 'response_type': response_type
             }
         }
-        all_responses.update(entry)
+        if response_name not in all_responses:
+            all_responses.update(entry)
     return all_responses

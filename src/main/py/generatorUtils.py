@@ -54,7 +54,8 @@ def get_type(param, enum_imports=[], model_imports=[]):
         param_type = param_type[0]
         param_type = get_ref_name(param_type)
         if 'schema' in param:
-            enum_imports.append(param_type)
+            if param_type not in enum_imports:
+                enum_imports.append(param_type)
         else:
             # Fixes issue where enums are included as models
             inner_enum = json_extract(param, 'x-enum-reference')
@@ -76,9 +77,9 @@ def get_type(param, enum_imports=[], model_imports=[]):
                     model_imports.append(param_type)
             raw_type = get_basic_type(param)
     else:
-        param_type = get_basic_type(param)
+        param_type = raw_type = get_basic_type(param)
     if isArray:
-        param_type = param_type+"[]"
+        param_type = raw_type = param_type+"[]"
     if 'additionalProperties' in param:
         map_hash, mapof = get_as_map(param)
         param_type = "Map<%s, %s>" % (map_hash, mapof)

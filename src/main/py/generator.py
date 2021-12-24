@@ -4,13 +4,11 @@ import shutil
 import threading
 import chevron
 
-from data_compiler import compile_api_data, compile_model_data, compile_enum_data, compile_response_data
-from generatorUtils import get_path_data, get_schema_data, get_response_data
+from data_compiler import get_responses, get_methods, get_enums, get_models, compile_resources
 
 
 def generate_enums():
-    data = get_schema_data()
-    compiled_enum_data = compile_enum_data(data)
+    compiled_enum_data = get_enums()
     path = '../../../generated-src/main/java/lib/enums/'
 
     files = glob.glob(path + '*', recursive=True)
@@ -43,8 +41,7 @@ def generate_enums():
 
 
 def generate_models():
-    data = get_schema_data()
-    compiled_model_data = compile_model_data(data)
+    compiled_model_data = get_models()
     path = '../../../generated-src/main/java/lib/models/'
 
     files = glob.glob(path + '*', recursive=True)
@@ -77,8 +74,7 @@ def generate_models():
 
 
 def generate_responses():
-    data = get_response_data()
-    compiled_response_data = compile_response_data(data)
+    compiled_response_data = get_responses()
     path = '../../../generated-src/main/java/lib/responses/'
 
     files = glob.glob(path + '*', recursive=True)
@@ -111,8 +107,7 @@ def generate_responses():
 
 
 def generate_api():
-    data = get_path_data()
-    compiled_api_data = compile_api_data(data)
+    compiled_api_data = get_methods()
     path = '../../../generated-src/main/java/lib/api/'
 
     files = glob.glob(path + '*', recursive=True)
@@ -177,6 +172,7 @@ def copy_helpers():
 
 def generate():
     generator_list = [generate_enums, generate_models, generate_responses, generate_api, copy_helpers]
+    compile_resources()
     print("Generating Sources:\n")
     try:
         for generator in generator_list:
