@@ -42,7 +42,6 @@ public class {{tag}}{
     {{/required}}{{/param_info}};
     {{#has_request}}Gson gson = new Gson();{{/has_request}}
     JsonObject responseJson = util.{{endpoint_type}}BungieEndpoint(path{{#has_request_body}}, (JsonObject) gson.toJsonTree(requestBody){{/has_request_body}});
-    System.out.println(responseJson);
     {{{return_type}}} response = new {{{return_type}}}(responseJson);
     if(!responseJson.get("ErrorCode").equals(200)){
     System.out.println("Error: "+responseJson.get("DetailedErrorTrace"));
@@ -51,22 +50,26 @@ public class {{tag}}{
     }
 
     {{#has_query}}
-        public static {{{return_type}}} {{method_name}}(
-        {{#param_info}}{{{param_type}}} {{param_name}},
-        {{/param_info}}{{#has_request_body}}{{{request_type}}} requestBody, {{/has_request_body}}
-        HttpUtils util
-        )throws IOException{
+    public static {{{return_type}}} {{method_name}}(
+    {{#param_info}}{{{param_type}}} {{param_name}},
+    {{/param_info}}{{#has_request_body}}{{{request_type}}} requestBody, {{/has_request_body}}
+    HttpUtils util)throws IOException{
         String path_unformatted = "{{path}}";
         HashMap map = new HashMap();
         String path = path_unformatted{{#param_info}}{{#required}}
             .replace("{{=<% %>=}}{<%={{ }}=%>{{param_name}}{{=<% %>=}}}<%={{ }}=%>", {{param_name}}.toString())
         {{/required}}{{/param_info}};
-        String path_params = "?";
-        path_params += {{#param_info}}{{^required}}"{{param_name}}="+{{param_name}}{{^last}}+"&"+{{/last}}{{/required}}{{/param_info}};
-        path += path_params;
+        String query_params = "?";
+        {{#param_info}}{{#isQuery}}String {{param_name}}_query = "{{param_name}}=";
+        {{#isArray}}for(var c : {{param_name}}){
+            if(c!={{param_name}}[0])
+                {{param_name}}_query += ",";
+            {{param_name}}_query += c; }
+        {{/isArray}}{{^isArray}}{{param_name}}_query += {{param_name}};{{/isArray}}{{/isQuery}}{{/param_info}}
+        query_params += {{#param_info}}{{#isQuery}}{{param_name}}_query{{^last}}+"&"+{{/last}}{{/isQuery}}{{/param_info}};
+        path += query_params;
         {{#has_request}}Gson gson = new Gson();{{/has_request}}
         JsonObject responseJson = util.{{endpoint_type}}BungieEndpoint(path{{#has_request_body}}, (JsonObject) gson.toJsonTree(requestBody){{/has_request_body}});
-        System.out.println(responseJson);
         {{{return_type}}} response = new {{{return_type}}}(responseJson);
         if(!responseJson.get("ErrorCode").equals(200)){
         System.out.println("Error: "+responseJson.get("DetailedErrorTrace"));
