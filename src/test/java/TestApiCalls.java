@@ -1,4 +1,5 @@
 import Helpers.HttpUtils;
+import Helpers.OAuth;
 import lib.api.Destiny2;
 import lib.enums.BungieMembershipType;
 import lib.enums.DestinyComponentType;
@@ -16,11 +17,13 @@ public class TestApiCalls {
         System.out.println("Name: "+ fqn);
         System.out.println("Class: "+TestApiCalls.class);
         HttpUtils util = new HttpUtils("99f1687a8ee64e66a8e8334a73513f19");
+        OAuth oauth = new OAuth("36427","-MqrV.wfpZCfujGh2OGxR5ge5S-ZiqdYw8d11BMmLmk");
+        util.addOAuth(oauth);
         var membership_id = 20639569L;
         var destinyMembershipId = 4611686018485616648L;
         var characterId = 2305843009410461773L;
         var enumSet = DestinyGameVersions.fromType(511);
-        var response = GetProfile(destinyMembershipId, BungieMembershipType.TigerSteam, DestinyComponentType.Profiles, util);
+        var response = GetProfile(destinyMembershipId, BungieMembershipType.TigerSteam, new DestinyComponentType[]{DestinyComponentType.Profiles, DestinyComponentType.CharacterInventories}, util);
         var versionsOwned = response.getResponse().getProfile().getData().getVersionsOwned();
         var versionSet = DestinyGameVersions.fromType(versionsOwned);
         for(var ver : versionSet){
@@ -29,5 +32,7 @@ public class TestApiCalls {
         }
         System.out.println("\b\b");
         System.out.println("Response: " + response);
+
+        //oauth.AccessLocally();
     }
 }
