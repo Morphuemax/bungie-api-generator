@@ -41,6 +41,12 @@ public class HttpUtils {
         con.setRequestMethod("GET");
         // Set header
         con.setRequestProperty("X-API-KEY", apiKey);
+        con.setRequestProperty("Content-Type", "application/json");
+        try {
+            con.setRequestProperty("Authorization", "Bearer " + oAuth.getAccessToken());
+        } catch (Exception e) {
+            System.out.println("Helpers.OAuth Access Token not available.  Helpers.OAuth may not have been initialized.");
+        }
 
         int responseCode = con.getResponseCode();
         System.out.println("\nSending 'GET' request to Bungie.Net : " + con.getURL().toString());
@@ -110,7 +116,7 @@ public class HttpUtils {
         return sendRequest(con);
     }
 
-    private static String sendRequest(HttpURLConnection con) {
+    static String sendRequest(HttpURLConnection con) {
         String response;
         try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
             String inputLine;
@@ -132,4 +138,16 @@ public class HttpUtils {
             e.printStackTrace();
         }
     }
+
+    public boolean hasOAuth(){
+        if(oAuth == null) return false;
+        if(oAuth.getAccessToken()==null) return false;
+        return true;
+    }
+
+    protected OAuth getOAuth(){
+        return oAuth;
+    }
+
+    public void addOAuth(OAuth oAuth){ this.oAuth = oAuth; }
 }
