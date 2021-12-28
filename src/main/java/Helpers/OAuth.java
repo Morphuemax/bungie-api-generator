@@ -14,6 +14,7 @@ public class OAuth {
     private JsonObject oAuthJson;
     private String clientId;
     private String clientSecret;
+    private OAuthFlow flow = new OAuthFlow(this);
 
     public OAuth(String clientId, String clientSecret) {
         this.clientId = clientId;
@@ -33,6 +34,7 @@ public class OAuth {
 
         URL obj = new URL(url);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        con.setRequestMethod("POST");
 
         con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
         con.setRequestProperty("Authorization", "Basic " + encodedCredentials);
@@ -41,7 +43,7 @@ public class OAuth {
 
         HttpUtils.addRequestBody(con, urlParameters);
 
-        String response = HttpUtils.postRequest(con);
+        String response = HttpUtils.sendRequest(con);
         if (response != null) {
             JsonParser parser = new JsonParser();
             oAuthJson = (JsonObject) parser.parse(response);
@@ -51,6 +53,10 @@ public class OAuth {
         }
     }
 
+    public void AccessLocally(){
+        flow.initOAuthFlow(8081);
+    }
+
     protected String getAccessToken() {
         return oAuthJson.get("access_token").getAsString();
     }
@@ -58,6 +64,10 @@ public class OAuth {
     protected String getRefreshToken() {
         return oAuthJson.get("refresh_token").getAsString();
     }
+
+    protected String getClientId() { return clientId; }
+
+    protected String getClientSecret() { return clientId; }
 
     public boolean Refresh() {
         return false;
