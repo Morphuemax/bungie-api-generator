@@ -1,3 +1,5 @@
+import timeit
+
 from generatorUtils import type_conversion_dict, get_ref_name, get_type, sortParams, json_extract, cast_convert, \
     get_path_data, get_response_data, get_schema_data
 
@@ -20,58 +22,64 @@ def get_responses():
 
 
 def get_methods():
-    return all_methods #
+    return all_methods
 
 
 def compile_resources():
     global all_enums, all_models, all_responses, all_methods
-    compile_enum_data(get_schema_data())
-    compile_model_data(get_schema_data())
+    compile_schema_data(get_schema_data())
     compile_response_data(get_response_data())
     compile_api_data(get_path_data())
+
+
+def compile_schema_data(data):
+    for k in data:
+        isEnum = False  # Assume it's not an enum until known
+        if data[k].get('enum') is not None:  # Confirm that JSON has 'enum' key
+            isEnum = True
+        if isEnum:
+            compile_enum_data({k: data[k]})
+        else:
+            if data[k].get('type')=='object':
+                compile_model_data({k: data[k]})
 
 
 def compile_enum_data(data):
     # Create empty dict which we will fill and return
     #data = json_extract(data, 'enum')
     for k in data:
-        isEnum = False  # Assume it's not an enum until known
-        temp = data[k]
-        if data[k].get('enum') is not None:  # Confirm that JSON has 'enum' key
-            isEnum = True
-        if isEnum:
-            class_name = k.split('.')[-1]  # Keys are formated {Tag}.{Name}
-            class_name = class_name[0].upper() + class_name[1:]
-            values = []
-            enum_type = data[k].get('format')
-            if enum_type in type_conversion_dict:
-                enum_type = type_conversion_dict[enum_type]
-            for value in data[k].get('x-enum-values'):  # This will give us the value, identifier and description
-                numerical_value = value.get('numericValue')
-                identifier = value.get('identifier')
-                # Not every enum has a description
-                description = value.get('description') if value.get('description') is not None else ""
-                values.append({'numericValue': numerical_value,
-                               'identifier': identifier,
-                               'description': description
-                               })
-            is_bitmask = json_extract(data[k], 'x-enum-is-bitmask')
-            if is_bitmask:
-                is_bitmask=is_bitmask[0];
+        class_name = k.split('.')[-1]  # Keys are formated {Tag}.{Name}
+        class_name = class_name[0].upper() + class_name[1:]
+        values = []
+        enum_type = data[k].get('format')
+        if enum_type in type_conversion_dict:
+            enum_type = type_conversion_dict[enum_type]
+        for value in data[k].get('x-enum-values'):  # This will give us the value, identifier and description
+            numerical_value = value.get('numericValue')
+            identifier = value.get('identifier')
+            # Not every enum has a description
+            description = value.get('description') if value.get('description') is not None else ""
+            values.append({'numericValue': numerical_value,
+                           'identifier': identifier,
+                           'description': description
+                           })
+        is_bitmask = json_extract(data[k], 'x-enum-is-bitmask')
+        if is_bitmask:
+            is_bitmask=is_bitmask[0];
 
-            enum = {'class_name': class_name,
-                    'enum_type': enum_type,
-                    'cast_type': cast_convert(enum_type),
-                    'is_bitmask': is_bitmask,
-                    'values': values
-                    }
-            # Name:{
-            #     'class_name': Name,
-            #     'values': [...]
-            # }
-            entry = {class_name: enum}
-            if class_name not in all_enums:
-                all_enums.update(entry)
+        enum = {'class_name': class_name,
+                'enum_type': enum_type,
+                'cast_type': cast_convert(enum_type),
+                'is_bitmask': is_bitmask,
+                'values': values
+                }
+        # Name:{
+        #     'class_name': Name,
+        #     'values': [...]
+        # }
+        entry = {class_name: enum}
+        if class_name not in all_enums:
+            all_enums.update(entry)
     return all_enums
 
     "############################################################"
@@ -82,55 +90,52 @@ def compile_model_data(data):
     for k in data:
         enums = []
         models = []
-        isResponse = False
-        if data[k].get('type') == "object":  # Model is defined by having object type
-            isResponse = True
-        if isResponse:
-            class_name = get_ref_name(k)  # Get ref name
-            all_properties = []
-            model_properties = data[k].get('properties')
-            property_name = ""
-            if model_properties is None:
-                model_properties = {k: data[k]}
-            for k2 in model_properties:
-                is_bitmask=False
-                if model_properties is not None:
-                    model_property = model_properties[k2]
-                    property_name = get_ref_name(k2)
+        class_name = get_ref_name(k)  # Get ref name
+        all_properties = []
+        model_properties = data[k].get('properties')
+        property_name = ""
+        if model_properties is None:
+            model_properties = {k: data[k]}
+        for k2 in model_properties:
+            is_bitmask=False
+            if model_properties is not None:
+                model_property = model_properties[k2]
+                property_name = get_ref_name(k2)
+                isArray = True if model_property.get('type') == "array" else False
+                if class_name == 'DestinyFactionProgression':
+                    d = 4
+                property_type, raw_type, enums, models = get_type(model_property, enums, models)
+                if model_property.get('enum'):
+                   property_type = property_name[0].upper() + property_name[1:]
+                   compile_enum_data({property_name: model_property})
+                   if property_type not in enums:
+                        enums.append(property_type)
 
-                    if class_name == 'DestinyProfileUserInfoCard':
-                        d = 4
-                    property_type, raw_type, enums, models = get_type(model_property, enums, models)
-                    if model_property.get('enum'):
-                        property_type = property_name[0].upper() + property_name[1:]
-                        compile_enum_data({property_name: model_property})
-                        if property_type not in enums:
-                            enums.append(property_type)
-
-                    is_bitmask = json_extract(model_properties[k2], 'x-enum-is-bitmask')
-                if is_bitmask:
-                    is_bitmask = is_bitmask[0]
-                all_properties.append({
-                    'property_type': property_type if not is_bitmask else property_type.split('[]')[0],
-                    'raw_type': raw_type if raw_type is not None else property_type,
-                    'property_name': property_name,
-                    'Property_Name': property_name[0].upper() + property_name[1:],
-                    'is_bitmask': is_bitmask,
-                    'isRequest': True if "Request" in class_name else False
-                })
-                # Each entry corresponds to a separate model
-                entry = {
-                    class_name: {
-                        'imports': {
-                            'enums': enums,
-                            'models': models
-                        },
-                        'properties': all_properties,
-                        'class_name': class_name
-                    }
+                is_bitmask = json_extract(model_properties[k2], 'x-enum-is-bitmask')
+            if is_bitmask:
+                is_bitmask = is_bitmask[0]
+            all_properties.append({
+                'property_type': property_type if not is_bitmask else property_type.split('[]')[0],
+                'raw_type': raw_type if raw_type is not None else property_type,
+                'property_name': property_name,
+                'Property_Name': property_name[0].upper() + property_name[1:],
+                'is_bitmask': is_bitmask,
+                'isArray': isArray,
+                'isRequest': True if "Request" in class_name else False
+            })
+            # Each entry corresponds to a separate model
+            entry = {
+                class_name: {
+                    'imports': {
+                        'enums': enums,
+                        'models': models
+                    },
+                    'properties': all_properties,
+                    'class_name': class_name
                 }
-                if class_name not in all_models:
-                    all_models.update(entry)
+            }
+            if class_name not in all_models:
+                all_models.update(entry)
     return all_models
 
     "############################################################"
@@ -141,6 +146,12 @@ def compile_api_parameters(parameter_data):
     enums = []  # If any parameters require enums, we will add them here for importing later
     has_query = False
     for key in parameter_data:
+        isArray = False
+        if key.get('type') == "array":
+            isArray = True
+        elif key.get('schema'):
+            if key.get('schema').get('type') == 'array':
+                isArray = True
         param_name = key['name']
         param_desc = key['description']
         # type = key['schema']['type']  # The data type of the parameter: str, int, lst, ...
@@ -155,6 +166,7 @@ def compile_api_parameters(parameter_data):
                            'param_type': param_type,
                            'in_type': in_type,
                            'isQuery': isQuery,
+                           'isArray': isArray,
                            'required': required
                            })
         if isQuery:
@@ -169,6 +181,8 @@ def compile_api_data(data):
     for path in data:
         path_data = data[path]
         method_name = path_data['summary'].split('.')[1]  # Summary/Endpoint is formatted {Tag}.{Name}
+        if method_name == 'GetProfile':
+            d = 5
         method_desc = path_data['description']
         # The key for further inspection is dependent on whether endpoint is get or post
         # If 'get' key doesn't exist, we know it must be 'post'
