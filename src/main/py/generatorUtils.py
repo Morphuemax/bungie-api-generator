@@ -46,10 +46,15 @@ def get_basic_type(data):
 
 
 def get_type(param, enum_imports=[], model_imports=[]):
-    isArray = True if param.get('type') == "array" else False
+    isArray = False
+    if param.get('type') == "array":
+        isArray = True
+    elif param.get('schema'):
+        if param.get('schema').get('type') == 'array':
+            isArray = True
     # Check if property is an enum
     param_type = json_extract(param, '$ref')
-    raw_type = None
+    raw_type = get_basic_type(param)
     if param_type:
         param_type = param_type[0]
         param_type = get_ref_name(param_type)
@@ -75,11 +80,11 @@ def get_type(param, enum_imports=[], model_imports=[]):
                         param_type = get_basic_type(param)
                 elif param_type not in model_imports:
                     model_imports.append(param_type)
-            raw_type = get_basic_type(param)
     else:
-        param_type = raw_type = get_basic_type(param)
+        param_type = get_basic_type(param)
     if isArray:
-        param_type = raw_type = param_type+"[]"
+        param_type = param_type+"[]"
+        raw_type = raw_type+"[]"
     if 'additionalProperties' in param:
         map_hash, mapof = get_as_map(param)
         param_type = "Map<%s, %s>" % (map_hash, mapof)
