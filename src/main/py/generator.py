@@ -151,8 +151,8 @@ def copy_helpers():
     HttpUtils = 'HttpUtils.java'
     OAuth = 'OAuth.java'
     ResponseObj = 'ResponseObject.java'
-    Flow = 'OAuthFlow.java'
-    read_files = [HttpUtils, OAuth, ResponseObj, Flow]
+    # Flow = 'OAuthFlow.java'
+    read_files = [HttpUtils, OAuth, ResponseObj]
 
     isExist = os.path.exists(write_path)
 

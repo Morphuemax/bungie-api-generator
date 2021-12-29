@@ -14,7 +14,6 @@ public class OAuth {
     private JsonObject oAuthJson;
     private String clientId;
     private String clientSecret;
-    private OAuthFlow flow = new OAuthFlow(this);
 
     public OAuth(String clientId, String clientSecret) {
         this.clientId = clientId;
@@ -53,9 +52,6 @@ public class OAuth {
         }
     }
 
-    public void AccessLocally(){
-        flow.initOAuthFlow(8081);
-    }
 
     protected String getAccessToken() {
         return oAuthJson.get("access_token").getAsString();
