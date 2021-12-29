@@ -22,6 +22,18 @@ public class {{class_name}}{
     {{/properties}}
     JsonElement json;
 
+    public {{class_name}}({{class_name}} model){
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        Gson gson = gsonBuilder.create();
+        json = gson.toJsonTree(model);
+        {{class_name}} temp = model;
+        {{#properties}}
+        this.{{property_name}} = temp.get{{Property_Name}}();
+        {{/properties}}
+        // Allows Garbage Collector to delete 'temp' to free up space
+        temp = null;
+    }
+
     public {{class_name}}(JsonElement jsonElement){
         json = jsonElement;
         GsonBuilder gsonBuilder = new GsonBuilder();
@@ -53,5 +65,10 @@ public class {{class_name}}{
     }
     {{/isRequest}}
     {{/properties}}
-    public JsonElement getAsJson(){ return json;}
+    public JsonElement getAsJson(){
+        if(json==null){
+            Gson gson = new Gson();
+            json = gson.toJsonTree(this);
+        }
+        return json;}
 }
