@@ -43,7 +43,7 @@ public class {{tag}}{
     {{#has_request}}Gson gson = new Gson();{{/has_request}}
     JsonObject responseJson = util.{{endpoint_type}}BungieEndpoint(path{{#has_request_body}}, (JsonObject) gson.toJsonTree(requestBody){{/has_request_body}});
     {{{return_type}}} response = new {{{return_type}}}(responseJson);
-    if(!responseJson.get("ErrorCode").equals(200)){
+    if(responseJson.get("ErrorCode").equals(200)){
     System.out.println("Error: "+responseJson.get("DetailedErrorTrace"));
     }
     return response;
@@ -71,11 +71,11 @@ public class {{tag}}{
         {{#has_request}}Gson gson = new Gson();{{/has_request}}
         JsonObject responseJson = util.{{endpoint_type}}BungieEndpoint(path{{#has_request_body}}, (JsonObject) gson.toJsonTree(requestBody){{/has_request_body}});
         {{{return_type}}} response = new {{{return_type}}}(responseJson);
-        if(!responseJson.get("ErrorCode").equals(200)){
-        System.out.println("Error: "+responseJson.get("DetailedErrorTrace"));
-        }
-        return response;
-        }
+    if(responseJson.get("ErrorCode").equals(200)){
+    System.out.println("Error: "+responseJson.get("DetailedErrorTrace"));
+    }
+    return response;
+    }
     {{/has_query}}
 {{/methods}}
 }

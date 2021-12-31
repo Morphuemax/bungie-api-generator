@@ -48,16 +48,16 @@ public class HttpUtils {
             System.out.println("Helpers.OAuth Access Token not available.  Helpers.OAuth may not have been initialized.");
         }
 
-        int responseCode = con.getResponseCode();
         System.out.println("\nSending 'GET' request to Bungie.Net : " + con.getURL().toString());
-        System.out.println("Response Code : " + responseCode);
-
-        String response = sendRequest(con);
+        System.out.println("Response Code : " + con.getResponseCode());
 
         JsonParser parser = new JsonParser();
-        JsonObject json = (JsonObject) parser.parse(response);
-
-        return json;
+        if (con.getResponseCode() == 200) {
+            String response = readResponse(con);
+            JsonObject json = (JsonObject) parser.parse(response);
+            return json;
+        }
+        return (JsonObject) parser.parse("{\"ErrorCode\":\"" + con.getResponseCode() + "\", \"DetailedErrorTrace\":\"" + con.getResponseMessage() + "\"}");
     }
 
     public JsonObject postBungieEndpoint(String endpoint, JsonObject requestBody) throws IOException {
@@ -77,11 +77,13 @@ public class HttpUtils {
 
         HttpUtils.addRequestBody(con, requestBody.getAsString());
 
-        String response = sendRequest(con);
         JsonParser parser = new JsonParser();
-        JsonObject json = (JsonObject) parser.parse(response);
-
-        return json;
+        if (con.getResponseCode() == 200) {
+            String response = readResponse(con);
+            JsonObject json = (JsonObject) parser.parse(response);
+            return json;
+        }
+        return (JsonObject) parser.parse("{\"ErrorCode\":\"" + con.getResponseCode() + "\", \"DetailedErrorTrace\":\"" + con.getResponseMessage() + "\"}");
     }
 
     public JsonObject postBungieEndpoint(String endpoint) throws IOException {
@@ -97,26 +99,28 @@ public class HttpUtils {
             System.out.println("Helpers.OAuth Access Token not available.  Helpers.OAuth may not have been initialized.");
         }
 
-        con.setDoOutput(true);
-
-        String response = sendRequest(con);
         JsonParser parser = new JsonParser();
-        JsonObject json = (JsonObject) parser.parse(response);
+        con.setDoOutput(true);
+        if (con.getResponseCode() == 200) {
+            String response = readResponse(con);
+            JsonObject json = (JsonObject) parser.parse(response);
+            return json;
+        }
 
-        return json;
+        return (JsonObject) parser.parse("{\"ErrorCode\":\"" + con.getResponseCode() + "\", \"DetailedErrorTrace\":\"" + con.getResponseMessage() + "\"}");
     }
 
     public static String getRequest(HttpURLConnection con) throws IOException {
         con.setRequestMethod("GET");
-        return sendRequest(con);
+        return readResponse(con);
     }
 
     public static String postRequest(HttpURLConnection con) throws IOException {
         con.setRequestMethod("POST");
-        return sendRequest(con);
+        return readResponse(con);
     }
 
-    static String sendRequest(HttpURLConnection con) {
+    static String readResponse(HttpURLConnection con) {
         String response;
         try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
             String inputLine;
@@ -124,8 +128,8 @@ public class HttpUtils {
             while ((inputLine = in.readLine()) != null) {
                 response += inputLine;
             }
-        } catch (Exception e) {
-            return null;
+        } catch (NullPointerException | IOException e) {
+            return "\"ErrorCode\":\"500\", \"DetailedErrorTrace\":\"Null Response\"}";
         }
         return response;
     }

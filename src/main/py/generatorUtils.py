@@ -46,7 +46,7 @@ def get_basic_type(data):
 
 
 def get_type(param, enum_imports=[], model_imports=[]):
-    isArray = False
+    isArray = isEnum = isPrimitive = isString = isModel = isMap = False
     if param.get('type') == "array":
         isArray = True
     elif param.get('schema'):
@@ -59,6 +59,7 @@ def get_type(param, enum_imports=[], model_imports=[]):
         param_type = param_type[0]
         param_type = get_ref_name(param_type)
         if 'schema' in param:
+            isEnum = True
             if param_type not in enum_imports:
                 enum_imports.append(param_type)
         else:
@@ -67,6 +68,7 @@ def get_type(param, enum_imports=[], model_imports=[]):
             if inner_enum:
                 inner_enum = get_ref_name(inner_enum[0].get('$ref'))
                 if param_type == inner_enum:
+                    isEnum = True
                     if param_type not in enum_imports:
                         enum_imports.append(param_type)
             else:
@@ -74,21 +76,36 @@ def get_type(param, enum_imports=[], model_imports=[]):
                 if mapped_def:
                     mapped_def = get_ref_name(mapped_def[0].get('$ref'))
                     if param_type != mapped_def:
+                        isModel = True
                         if param_type not in model_imports:
                             model_imports.append(param_type)
                     else:
                         param_type = get_basic_type(param)
-                elif param_type not in model_imports:
-                    model_imports.append(param_type)
+                        if param_type == "String" or param_type == "Object":
+                            isString = True
+                        else:
+                            isPrimitive = True
+                else:
+                    isModel = True
+                    if param_type not in model_imports:
+                        model_imports.append(param_type)
     else:
         param_type = get_basic_type(param)
+        if param_type == "String" or param_type == "Object":
+            isString = True
+        else:
+            isPrimitive = True
     if isArray:
-        param_type = param_type+"[]"
-        raw_type = raw_type+"[]"
+        param_type = param_type + "[]"
+        raw_type = raw_type + "[]"
     if 'additionalProperties' in param:
         map_hash, mapof = get_as_map(param)
         param_type = "Map<%s, %s>" % (map_hash, mapof)
-    return param_type, raw_type, enum_imports, model_imports
+        isMap = True
+        isModel = isEnum = isPrimitive = False
+    class_archetypes = {"isPrimitive": isPrimitive, "isEnum": isEnum, "isString": isString, "isModel": isModel,
+                        "isArray": isArray, "isMap": isMap}
+    return param_type, raw_type, enum_imports, model_imports, class_archetypes
 
 
 def type_convert(t):
@@ -98,6 +115,7 @@ def type_convert(t):
 
 
 def cast_convert(t):
+    t = t.split('[]')[0]
     if t in cast_conversion_dict:
         t = cast_conversion_dict[t]
     return t
@@ -144,7 +162,7 @@ def get_as_map(json):
     map_hash = type_convert(map_hash)
     map_of = type_convert(map_of)
     if is_array:
-        map_of = map_of+'[]'
+        map_of = map_of + '[]'
     return map_hash, map_of
 
 
@@ -162,6 +180,7 @@ def get_schema_data():
     with open(apiFile, 'r', encoding='utf-8') as data_file:
         rawData = json.load(data_file)
     return rawData.get('components').get('schemas')
+
 
 def get_response_data():
     # apiFile = './api-src/openapi.json'

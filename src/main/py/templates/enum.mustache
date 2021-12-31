@@ -15,7 +15,7 @@ public enum {{class_name}}{
     private {{enum_type}} enumValue;
     private String enumName;
 
-	private {{class_name}}(String bungieEnumName, {{enum_type}} bungieEnumValue) {
+private {{class_name}}(String bungieEnumName, {{enum_type}} bungieEnumValue) {
 this.enumName = bungieEnumName;
 this.enumValue = bungieEnumValue;
 }
@@ -26,13 +26,21 @@ return enumName;
 }
 
 public {{enum_type}} getTypeDefinition() {
-	    return enumValue;
-    }
+return enumValue;
+}
 
-    {{#is_bitmask}}
+public static {{class_name}} getEnumFromValue({{enum_type}} value){
+for(var e : {{class_name}}.values()){
+if(value.equals(e.getTypeDefinition()))
+return e;
+}
+return null;
+}
+
+{{#is_bitmask}}
     public static EnumSet<{{class_name}}> fromType({{enum_type}} enumId) {
-        EnumSet<{{class_name}}> codesList = EnumSet.noneOf({{class_name}}.class);
-        for ({{class_name}} code : values()) {
+    EnumSet<{{class_name}}> codesList = EnumSet.noneOf({{class_name}}.class);
+    for ({{class_name}} code : values()) {
     if ((enumId & code.getTypeDefinition()) != 0) {
     codesList.add(code);
     }
@@ -50,5 +58,5 @@ public {{enum_type}} getTypeDefinition() {
     }
     return returnValue;
     }
-    {{/is_bitmask}}
+{{/is_bitmask}}
 }

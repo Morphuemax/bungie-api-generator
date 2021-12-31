@@ -101,26 +101,35 @@ def compile_model_data(data):
             if model_properties is not None:
                 model_property = model_properties[k2]
                 property_name = get_ref_name(k2)
-                isArray = True if model_property.get('type') == "array" else False
-                if class_name == 'DestinyFactionProgression':
+                if class_name == 'DestinyProfileUserInfoCard':
                     d = 4
-                property_type, raw_type, enums, models = get_type(model_property, enums, models)
+                property_type, raw_type, enums, models, class_archetypes = get_type(model_property, enums, models)
                 if model_property.get('enum'):
-                   property_type = property_name[0].upper() + property_name[1:]
-                   compile_enum_data({property_name: model_property})
-                   if property_type not in enums:
+                    property_type = property_name[0].upper() + property_name[1:]
+                    class_archetypes['isPrimitive'] = False
+                    class_archetypes['isEnum'] = True
+                    compile_enum_data({property_name: model_property})
+                    if property_type not in enums:
                         enums.append(property_type)
 
                 is_bitmask = json_extract(model_properties[k2], 'x-enum-is-bitmask')
             if is_bitmask:
                 is_bitmask = is_bitmask[0]
+            if class_archetypes["isArray"] and not is_bitmask:
+                raw_type = raw_type.split('[]')[0]
             all_properties.append({
                 'property_type': property_type if not is_bitmask else property_type.split('[]')[0],
                 'raw_type': raw_type if raw_type is not None else property_type,
+                'cast_type': cast_convert(property_type),
                 'property_name': property_name,
                 'Property_Name': property_name[0].upper() + property_name[1:],
                 'is_bitmask': is_bitmask,
-                'isArray': isArray,
+                'isPrimitive': class_archetypes["isPrimitive"],
+                'isEnum': class_archetypes["isEnum"],
+                'isString': class_archetypes["isString"],
+                'isModel': class_archetypes["isModel"],
+                'isArray': class_archetypes["isArray"],
+                'isMap': class_archetypes["isMap"],
                 'isRequest': True if "Request" in class_name else False
             })
             # Each entry corresponds to a separate model
@@ -155,7 +164,7 @@ def compile_api_parameters(parameter_data):
         param_name = key['name']
         param_desc = key['description']
         # type = key['schema']['type']  # The data type of the parameter: str, int, lst, ...
-        param_type, raw_type, enums, models = get_type(key, enums)
+        param_type, raw_type, enums, models, class_archetypes = get_type(key, enums)
         in_type = key['in']  # Is "in" a path parameter or query parameter
         isQuery = True if in_type == "query" else False  # Used for template formatting
 
@@ -280,11 +289,15 @@ def compile_response_data(data):
         models = []
         response_name = get_ref_name(key)
         response = json_extract(data[key], 'Response')[0]
-        response_type, raw_type, enums, models = get_type(response, model_imports=models)
+        response_type, raw_type, enums, models, class_archetypes = get_type(response, model_imports=models)
         entry = {
             response_name: {
                 'models': models[0] if models else [],
-                'response_name': response_name+"Response",
+                'isMap': class_archetypes["isMap"],
+                'isModel': class_archetypes["isModel"],
+                'isArray': class_archetypes["isArray"],
+                'isPrimitive': class_archetypes["isPrimitive"],
+                'response_name': response_name + "Response",
                 'response_type': response_type
             }
         }
