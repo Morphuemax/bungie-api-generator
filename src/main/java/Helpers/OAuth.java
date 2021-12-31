@@ -42,7 +42,7 @@ public class OAuth {
 
         HttpUtils.addRequestBody(con, urlParameters);
 
-        String response = HttpUtils.sendRequest(con);
+        String response = HttpUtils.readResponse(con);
         if (response != null) {
             JsonParser parser = new JsonParser();
             oAuthJson = (JsonObject) parser.parse(response);
