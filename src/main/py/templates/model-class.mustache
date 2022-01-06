@@ -7,6 +7,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import Helpers.ResponseObject;
 import java.util.EnumSet;
+import com.google.gson.annotations.SerializedName;
 {{#imports}}
 {{#enums}}
 import lib.enums.{{.}};
@@ -19,21 +20,29 @@ import lib.models.{{.}};
 public class {{class_name}}{
 
     {{#properties}}
-    {{#is_bitmask}}{{{raw_type}}}{{/is_bitmask}}{{^is_bitmask}}{{{property_type}}}{{/is_bitmask}} {{property_name}}; {{#is_bitmask}}EnumSet<{{property_type}}>{{#isArray}}[]{{/isArray}} {{property_name}}Set;{{/is_bitmask}}
+    @SerializedName("{{property_name}}")
+    {{#is_bitmask}}{{{raw_type}}}{{/is_bitmask}}{{^is_bitmask}}{{{property_type}}}{{/is_bitmask}} {{property_name}}{{^isEnum}}{{^isPrimitive}}{{#isArray}}{{#isModel}} = new {{{property_type}}}{ }{{/isModel}}{{/isArray}}{{^isArray}} = new {{#isMap}}Hash{{/isMap}}{{{property_type}}}(){{#isMap}}{}{{/isMap}}{{/isArray}}{{/isPrimitive}}{{/isEnum}};
+    {{#is_bitmask}}
+    EnumSet<{{property_type}}>{{#isArray}}[]{{/isArray}} {{property_name}}Set;
+    {{/is_bitmask}}
+
     {{/properties}}
     JsonElement json;
+
+    public {{class_name}}(){
+    }
 
     public {{class_name}}({{class_name}} model){
         GsonBuilder gsonBuilder = new GsonBuilder();
         Gson gson = gsonBuilder.create();
-json = gson.toJsonTree(model);
-{{class_name}} temp = model;
-{{#properties}}
-    this.{{property_name}} = temp.get{{Property_Name}}();
-{{/properties}}
-// Allows Garbage Collector to delete 'temp' to free up space
-temp = null;
-}
+        json = gson.toJsonTree(model);
+        {{class_name}} temp = model;
+        {{#properties}}
+        this.{{property_name}} = temp.get{{Property_Name}}();
+        {{/properties}}
+        // Allows Garbage Collector to delete 'temp' to free up space
+        temp = null;
+    }
 
 public {{class_name}}(JsonElement jsonElement){
 try{
@@ -51,19 +60,12 @@ temp = null;
 
 {{#properties}}
     public {{#is_bitmask}}{{{raw_type}}}{{/is_bitmask}}{{^is_bitmask}}{{{property_type}}}{{/is_bitmask}} get{{Property_Name}}(){
-    if({{property_name}} == null){
-    {{#isArray}}return new {{#is_bitmask}}{{{raw_type}}}{{/is_bitmask}}{{^is_bitmask}}{{{property_type}}}{{/is_bitmask}}{ {{#isEnum}}{{^is_bitmask}}{{{cast_type}}}.getEnumFromValue({{raw_type}}.valueOf("0")){{/is_bitmask}}{{/isEnum}} };{{/isArray}}
-    {{^isArray}}
-        this.{{property_name}} = {{#isPrimitive}}{{{property_type}}}.valueOf("0")/*p*/{{/isPrimitive}}{{#isEnum}}{{#is_bitmask}}{{{raw_type}}}.valueOf("0")/*b*/{{/is_bitmask}}{{^is_bitmask}}{{{property_type}}}.getEnumFromValue({{raw_type}}.valueOf("0"))/*e*/{{/is_bitmask}}{{/isEnum}}
-        {{^isEnum}}{{^isPrimitive}}new {{#isMap}}Hash{{/isMap}}{{{property_type}}}({{#isModel}}(JsonElement)null{{/isModel}}){{/isPrimitive}}{{/isEnum}}{{#isMap}}{}{{/isMap}};
-    {{/isArray}}
-    }
-    return {{property_name}};
+        return {{property_name}};
     }
     {{#is_bitmask}}public EnumSet<{{property_type}}>{{#isArray}}[]{{/isArray}} get{{Property_Name}}Set() {
     if({{property_name}}Set == null){
-    {{#isArray}}for(int i = 0; i < {{property_name}}.length; i++){
-    {{property_name}}Set[i] = {{/isArray}}{{property_type}}.fromType({{property_name}}{{#isArray}}[i]{{/isArray}});{{#isArray}}
+    {{#isArray}}for(int i = 0; i < {{property_name}}.length; i++){ {{/isArray}}
+    {{property_name}}Set{{#isArray}}[i]{{/isArray}} = {{property_type}}.fromType({{property_name}}{{#isArray}}[i]{{/isArray}});{{#isArray}}
         } {{/isArray}}
     }
     return {{property_name}}Set;
