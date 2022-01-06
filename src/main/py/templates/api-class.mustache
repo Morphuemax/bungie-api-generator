@@ -3,6 +3,7 @@ package lib.api;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import java.util.HashMap;
+import java.util.List;
 import org.openide.util.MapFormat;
 import Helpers.HttpUtils;
 import java.io.IOException;
@@ -51,7 +52,7 @@ public class {{tag}}{
 
     {{#has_query}}
     public static {{{return_type}}} {{method_name}}(
-    {{#param_info}}{{{param_type}}} {{param_name}},
+    {{#param_info}}{{#isArray}}List<{{/isArray}}{{{param_type}}}{{#isArray}}>{{/isArray}} {{param_name}},
     {{/param_info}}{{#has_request_body}}{{{request_type}}} requestBody, {{/has_request_body}}
     HttpUtils util)throws IOException{
         String path_unformatted = "{{path}}";
@@ -62,7 +63,7 @@ public class {{tag}}{
         String query_params = "?";
         {{#param_info}}{{#isQuery}}String {{param_name}}_query = "{{param_name}}=";
         {{#isArray}}for(var c : {{param_name}}){
-            if(c!={{param_name}}[0])
+            if(c!={{param_name}}.get(0))
                 {{param_name}}_query += ",";
             {{param_name}}_query += c; }
         {{/isArray}}{{^isArray}}{{param_name}}_query += {{param_name}};{{/isArray}}{{/isQuery}}{{/param_info}}
