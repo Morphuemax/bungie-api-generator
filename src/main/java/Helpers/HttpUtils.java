@@ -31,25 +31,62 @@ public class HttpUtils {
     }
 
     public HttpUtils(String apiKey, OAuth oAuth) {
-        this.apiKey = apiKey;
+        HttpUtils.apiKey = apiKey;
         this.oAuth = oAuth;
     }
 
+    public static String getRequest(HttpURLConnection con) throws IOException {
+        con.setRequestMethod("GET");
+        return readResponse(con);
+    }
+
+    public static String postRequest(HttpURLConnection con) throws IOException {
+        con.setRequestMethod("POST");
+        return readResponse(con);
+    }
+
+    static String readResponse(HttpURLConnection con) {
+        String response;
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
+            String inputLine;
+            response = "";
+            while ((inputLine = in.readLine()) != null) {
+                response += inputLine;
+            }
+        } catch (NullPointerException | IOException e) {
+            return "\"ErrorCode\":\"500\", \"DetailedErrorTrace\":\"Null Response\"}";
+        }
+        return response;
+    }
+
+    protected static void addRequestBody(HttpURLConnection con, String body) {
+        try (OutputStream os = con.getOutputStream()) {
+            byte[] input = body.getBytes(StandardCharsets.UTF_8);
+            os.write(input, 0, input.length);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public JsonObject getBungieEndpoint(String endpoint) throws IOException {
+
         URL obj = new URL(HOST + endpoint);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-        con.setRequestMethod("GET");
-        // Set header
-        con.setRequestProperty("X-API-KEY", apiKey);
-        con.setRequestProperty("Content-Type", "application/json");
         try {
-            con.setRequestProperty("Authorization", "Bearer " + oAuth.getAccessToken());
+            con.setRequestMethod("GET");
+            // Set header
+            con.setRequestProperty("X-API-KEY", apiKey);
+            con.setRequestProperty("Content-Type", "application/json");
+            try {
+                con.setRequestProperty("Authorization", "Bearer " + oAuth.getAccessToken());
+            } catch (Exception e) {
+                System.out.println("Helpers.OAuth Access Token not available.  Helpers.OAuth may not have been initialized.");
+            }
         } catch (Exception e) {
-            System.out.println("Helpers.OAuth Access Token not available.  Helpers.OAuth may not have been initialized.");
+            System.out.println("Failed Sending 'GET' request to Bungie.Net : " + con.getURL().toString());
+            System.out.println("Response Code : " + con.getResponseCode());
+            e.printStackTrace();
         }
-
-        System.out.println("\nSending 'GET' request to Bungie.Net : " + con.getURL().toString());
-        System.out.println("Response Code : " + con.getResponseCode());
 
         JsonParser parser = new JsonParser();
         if (con.getResponseCode() == 200) {
@@ -57,6 +94,7 @@ public class HttpUtils {
             JsonObject json = (JsonObject) parser.parse(response);
             return json;
         }
+
         return (JsonObject) parser.parse("{\"ErrorCode\":\"" + con.getResponseCode() + "\", \"DetailedErrorTrace\":\"" + con.getResponseMessage() + "\"}");
     }
 
@@ -110,48 +148,16 @@ public class HttpUtils {
         return (JsonObject) parser.parse("{\"ErrorCode\":\"" + con.getResponseCode() + "\", \"DetailedErrorTrace\":\"" + con.getResponseMessage() + "\"}");
     }
 
-    public static String getRequest(HttpURLConnection con) throws IOException {
-        con.setRequestMethod("GET");
-        return readResponse(con);
+    public boolean hasOAuth() {
+        if (oAuth == null) return false;
+        return oAuth.getAccessToken() != null;
     }
 
-    public static String postRequest(HttpURLConnection con) throws IOException {
-        con.setRequestMethod("POST");
-        return readResponse(con);
-    }
-
-    static String readResponse(HttpURLConnection con) {
-        String response;
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
-            String inputLine;
-            response = "";
-            while ((inputLine = in.readLine()) != null) {
-                response += inputLine;
-            }
-        } catch (NullPointerException | IOException e) {
-            return "\"ErrorCode\":\"500\", \"DetailedErrorTrace\":\"Null Response\"}";
-        }
-        return response;
-    }
-
-    protected static void addRequestBody(HttpURLConnection con, String body) {
-        try (OutputStream os = con.getOutputStream()) {
-            byte[] input = body.getBytes(StandardCharsets.UTF_8);
-            os.write(input, 0, input.length);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public boolean hasOAuth(){
-        if(oAuth == null) return false;
-        if(oAuth.getAccessToken()==null) return false;
-        return true;
-    }
-
-    protected OAuth getOAuth(){
+    protected OAuth getOAuth() {
         return oAuth;
     }
 
-    public void addOAuth(OAuth oAuth){ this.oAuth = oAuth; }
+    public void addOAuth(OAuth oAuth) {
+        this.oAuth = oAuth;
+    }
 }
