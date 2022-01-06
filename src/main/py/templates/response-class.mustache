@@ -4,46 +4,50 @@ import java.util.Map;
 import java.util.HashMap;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import com.google.gson.annotations.SerializedName;
 {{#models}}import lib.models.{{models}};{{/models}}
 
 public class {{response_name}}{
-{{{response_type}}} Response;
-int ErrorCode;
-int ThrottleSeconds;
-String ErrorStatus;
-String Message;
-Map
-<String, String> MessageData;
-String DetailedErrorTrace;
-JsonElement json;
+    @SerializedName("Response")
+    {{{response_type}}} Response = {{^isPrimitive}}new{{/isPrimitive}} {{#isMap}}Hash{{/isMap}}{{{response_type}}}{{#isPrimitive}}.valueOf{{/isPrimitive}}{{^isArray}}({{#isModel}}(JsonElement)null{{/isModel}}{{#isPrimitive}}"0"{{/isPrimitive}}){{/isArray}}{{#isArray}}{}{{/isArray}}{{#isMap}}{}{{/isMap}};
+    int ErrorCode;
+    int ThrottleSeconds;
+    String ErrorStatus;
+    String Message;
+    Map<String, String> MessageData;
+    String DetailedErrorTrace;
+    JsonElement json;
 
-public {{response_name}}(JsonElement jsonElement){
-try{
-Gson gson = new Gson();
-{{response_name}} temp = gson.fromJson(jsonElement, {{response_name}}.class);
-this.Response = temp.getResponse();
-this.ErrorCode = temp.getErrorCode();
-this.ThrottleSeconds = temp.getThrottleSeconds();
-this.ErrorStatus = temp.getErrorStatus();
-this.Message = temp.getMessage();
-this.MessageData = temp.getMessageData();
-this.DetailedErrorTrace = temp.getDetailedErrorTrace();
-temp = null;
-json = jsonElement;
-}catch(NullPointerException e){}
-}
+    public {{response_name}}(){
+        Gson gson = new Gson();
+        json = gson.toJsonTree(this);
+    }
 
-public {{{response_type}}} getResponse(){
-if(Response == null)
-return {{^isPrimitive}}new{{/isPrimitive}} {{#isMap}}Hash{{/isMap}}{{{response_type}}}{{#isPrimitive}}.valueOf{{/isPrimitive}}{{^isArray}}({{#isModel}}(JsonElement)null{{/isModel}}{{#isPrimitive}}"0"{{/isPrimitive}}){{/isArray}}{{#isArray}}{}{{/isArray}}{{#isMap}}{}{{/isMap}};
-return Response;
-}
-public int getErrorCode(){ return ErrorCode;}
-public int getThrottleSeconds() { return ThrottleSeconds; }
-public String getErrorStatus() { return ErrorStatus; }
-public String getMessage() { return Message; }
-public Map
-<String, String> getMessageData() { return MessageData; }
-public String getDetailedErrorTrace() { return DetailedErrorTrace; }
-public JsonElement getAsJson() { return json; }
+    public {{response_name}}(JsonElement jsonElement){
+        try{
+            Gson gson = new Gson();
+            {{response_name}} temp = gson.fromJson(jsonElement, {{response_name}}.class);
+            this.Response = temp.getResponse();
+            this.ErrorCode = temp.getErrorCode();
+            this.ThrottleSeconds = temp.getThrottleSeconds();
+            this.ErrorStatus = temp.getErrorStatus();
+            this.Message = temp.getMessage();
+            this.MessageData = temp.getMessageData();
+            this.DetailedErrorTrace = temp.getDetailedErrorTrace();
+            temp = null;
+            json = jsonElement;
+        }catch(NullPointerException e){}
+    }
+
+    public {{{response_type}}} getResponse(){
+        return Response;
+    }
+    public int getErrorCode(){ return ErrorCode;}
+    public int getThrottleSeconds() { return ThrottleSeconds; }
+    public String getErrorStatus() { return ErrorStatus; }
+    public String getMessage() { return Message; }
+    public Map
+    <String, String> getMessageData() { return MessageData; }
+    public String getDetailedErrorTrace() { return DetailedErrorTrace; }
+    public JsonElement getAsJson() { return json; }
 }
