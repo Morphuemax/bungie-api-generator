@@ -172,7 +172,7 @@ def compile_api_parameters(parameter_data):
 
         param_json.append({'param_name': param_name,
                            'param_desc': param_desc,
-                           'param_type': param_type,
+                           'param_type': param_type if not isArray else param_type.split('[]')[0],
                            'in_type': in_type,
                            'isQuery': isQuery,
                            'isArray': isArray,
