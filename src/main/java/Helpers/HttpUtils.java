@@ -108,7 +108,7 @@ public class HttpUtils {
         try {
             con.setRequestProperty("Authorization", "Bearer " + oAuth.getAccessToken());
         } catch (Exception e) {
-            System.out.println("Helpers.OAuth Access Token not available.  Helpers.OAuth may not have been initialized.");
+            System.out.println("\nHelpers.OAuth Access Token not available.  Helpers.OAuth may not have been initialized.");
         }
 
         con.setDoOutput(true);
@@ -134,7 +134,7 @@ public class HttpUtils {
         try {
             con.setRequestProperty("Authorization", "Bearer " + oAuth.getAccessToken());
         } catch (Exception e) {
-            System.out.println("Helpers.OAuth Access Token not available.  Helpers.OAuth may not have been initialized.");
+            System.out.println("\nHelpers.OAuth Access Token not available.  Helpers.OAuth may not have been initialized.");
         }
 
         JsonParser parser = new JsonParser();
